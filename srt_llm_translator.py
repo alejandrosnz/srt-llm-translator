@@ -1,15 +1,24 @@
 import argparse
+import os
 
 from translator.translate import translate_subtitles
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SRT file translator using LLM.")
     parser.add_argument("--target-lang", type=str, required=True, help="Target language (e.g.: en).")
-    parser.add_argument("--file", type=str, required=True, help="Source SRT file path.")
-    parser.add_argument("--output", type=str, default="translated.srt", help="Output SRT file path.")
+    parser.add_argument("--file", type=str, help="Source SRT file path.")
+    parser.add_argument("--folder", type=str, help="Source folder of SRT files.")
     args = parser.parse_args()
 
-    translate_subtitles(args.file, args.output, args.target_lang)
+    if args.file and args.folder:
+        raise ValueError("Please specify either --file or --folder, not both.")
 
-    print(f"Translated subtitles saved to {args.output}")
-
+    if args.folder:
+        for filename in os.listdir(args.folder):
+            if filename.endswith(".srt"):
+                file_path = os.path.join(args.folder, filename)
+                translate_subtitles(file_path, args.target_lang)
+    elif args.file:
+        translate_subtitles(args.file, args.target_lang)
+    else:
+        raise ValueError("The following arguments are required: --file or --folder")

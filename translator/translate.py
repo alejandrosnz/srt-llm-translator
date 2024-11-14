@@ -5,7 +5,7 @@ import srt
 from openai import OpenAI
 from .file_handler import load_srt_file, save_str_file
 
-def translate_subtitles(source_srt_file: str, target_srt_file: str, target_language: str) -> str:
+def translate_subtitles(source_srt_file: str, target_language: str) -> str:
     """
     Translates subtitles in an SRT file to the target language, preserving timestamps.
 
@@ -15,19 +15,20 @@ def translate_subtitles(source_srt_file: str, target_srt_file: str, target_langu
     target_language (str): Target language code (e.g., 'es', 'de', 'zh').
 
     """
-    # Configure OpenAI API
-    openai = OpenAI(
+    # Configure OpenAI API client
+    llm_client = OpenAI(
         api_key=os.getenv("OPENAI_API_KEY"),
         base_url=os.getenv("OPENAI_API_URL", "https://api.openai.com/v1"),
     )
     
     # Load subtitle file
+    print(f"Translating the STR file '{source_srt_file}'")
     subtitles = load_srt_file(source_srt_file)
 
     translated_subtitles = []
     for entry in subtitles:
         try:
-            response = openai.chat.completions.create(
+            response = llm_client.chat.completions.create(
                 model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 messages=[
                     {
@@ -55,7 +56,10 @@ def translate_subtitles(source_srt_file: str, target_srt_file: str, target_langu
             translated_subtitles.append(entry)
 
     # Save translated file
+    target_srt_file = source_srt_file.replace('.srt', f'.{target_language}.srt')
     if translated_subtitles:
         save_str_file(target_srt_file, translated_subtitles)
     else:
         raise Exception("No subtitles to save")
+
+    print(f"Translated subtitles saved to '{target_srt_file}'")

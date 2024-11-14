@@ -27,27 +27,34 @@ The SRT Translator is a Python-based tool that translates subtitles from one lan
     pip install -r requirements.txt
     ```
 
-3. Set up your OpenAI API key:
+3. Set up your OpenAI API key and optionally change the default model:
     ```bash
     export OPENAI_API_KEY='your_OpenAI_api_key'
+    export OPENAI_MODEL='gpt-4o-mini'
     ```
 
 ## Usage
 To translate an SRT file, run the following command:
 
 ``` bash
-python srt_llm_translator.py --target-lang <target_language> --file <source_file.srt> --output <output_file.srt>
+python srt_llm_translator.py --target-lang <target_language> --file <source_file.srt>
+```
+
+To translate multiple SRT files, run the following command:
+
+``` bash
+python srt_llm_translator.py --target-lang <target_language> --folder <path/to/dir>
 ```
 
 ### Parameters
 - `--target-lang`: The language code for the target language (e.g., `en` for English, `es` for Spanish).
 - `--file`: The path to the source SRT file.
-- `--output`: The path where the translated SRT file will be saved (default is `translated.srt`).
+- `--folder`: The path to a directory where your source SRT files are.
 
 ## Example
 
 ``` bash
-python srt_llm_translator.py --target-lang es --file subtitles.srt --output translated_subtitles.srt
+python srt_llm_translator.py --target-lang es --file subtitles.srt
 ```
 
 ## Other models
