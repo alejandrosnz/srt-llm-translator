@@ -29,9 +29,8 @@ The SRT Translator is a Python-based tool that translates subtitles from one lan
 
 3. Set up your OpenAI API key:
     ```bash
-    export OPENAI_API_KEY='your_OpenAI_key'
+    export OPENAI_API_KEY='your_OpenAI_api_key'
     ```
-
 
 ## Usage
 To translate an SRT file, run the following command:
@@ -51,10 +50,22 @@ python srt_llm_translator.py --target-lang <target_language> --file <source_file
 python srt_llm_translator.py --target-lang es --file subtitles.srt --output translated_subtitles.srt
 ```
 
-## Optional: Grok xAI
-If you want to use Grok xAI models for translation, set the following variables:
+## Other models
+
+You can use other models by overwritting the following environment variables:
+
+### OpenRouter
+
+``` bash
+export OPENAI_API_KEY='your_OpenRouter_api_key'
+export OPENAI_MODEL=anthropic/claude-3.5-sonnet
+export OPENAI_API_URL=https://openrouter.ai/api/v1
+```
+
+### xAI Grok
+
 ```bash
-export OPENAI_API_KEY='your_xAI_key'
+export OPENAI_API_KEY='your_xAI_api_key'
 export OPENAI_MODEL=grok-beta
 export OPENAI_API_URL=https://api.x.ai/v1
 ```
