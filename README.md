@@ -1,7 +1,7 @@
-# SRT Translator
+# SRT LLM Translator
 
 ## Overview
-The SRT Translator is a Python-based tool that translates subtitles from one language to another using OpenAI's language model. It preserves the original timestamps of the subtitles, making it easy to integrate translated subtitles back into video files.
+The SRT LLM Translator is a Python-based tool that translates subtitles from one language to another using large language models. It preserves the original timestamps of the subtitles, making it easy to integrate translated subtitles back into video files.
 
 ## Features
 - Translates SRT subtitle files to a specified target language.
