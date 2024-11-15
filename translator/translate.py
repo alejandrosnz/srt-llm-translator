@@ -33,7 +33,9 @@ def translate_subtitles(source_srt_file: str, target_language: str) -> str:
                 messages=[
                     {
                         "role": "system",
-                        "content": f"Translate the following text to {target_language}. Maintain the same tone and style."
+                        "content": f"""Translate the following text to {target_language}. 
+                        Maintain the same tone and style. Do not ask for further clarifications,
+                        if in doubt, leave the original text"""
                     },
                     {
                         "role": "user",
