@@ -76,3 +76,9 @@ export OPENAI_API_KEY='your_xAI_api_key'
 export OPENAI_MODEL=grok-beta
 export OPENAI_API_URL=https://api.x.ai/v1
 ```
+
+## Cost and Performance
+
+The cost and performance of the translator were tested with xAI's grok-beta model (priced at $5/M token input and $15/M output). With this model, a 1-hour SRT file (approximately 500 phrases) cost around $0.25 and took 5 minutes to process.
+
+In contrast, using OpenAI's GPT 4o-mini model (priced at $0.15/M token input and $0.60/M output), the same 1-hour SRT file cost less than $0.01, but took nearly 8 minutes to process.
