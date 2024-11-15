@@ -54,7 +54,7 @@ python srt_llm_translator.py --target-lang <target_language> --folder <path/to/d
 ## Example
 
 ``` bash
-python srt_llm_translator.py --target-lang es --file subtitles.srt
+python srt_llm_translator.py --target-lang es --file sample/sample.srt
 ```
 
 ## Other models

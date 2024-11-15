@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:05,000
+Este es un archivo SRT de ejemplo.
+
+2
+00:00:05,500 --> 00:00:09,500
+Este es un archivo SRT de muestra.
+
+3
+00:00:10,000 --> 00:00:14,000
+Este es un archivo SRT de ejemplo.
+
+4
+00:00:14,500 --> 00:00:18,500
+Este es un archivo SRT de ejemplo.
