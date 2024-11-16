@@ -79,6 +79,15 @@ export OPENAI_API_URL=https://api.x.ai/v1
 
 ## Cost and Performance
 
-The cost and performance of the translator were tested with xAI's grok-beta model (priced at $5/M token input and $15/M output). With this model, a 1-hour SRT file (approximately 500 phrases) cost around $0.25 and took 5 minutes to process.
+The cost and performance of the translator were tested with xAI's grok-beta model (priced at $5/M token input and $15/M output). With this model, a 1-hour SRT file (approximately 500 phrases) cost around $0.25 and took 6 minutes to process. In contrast, using OpenAI's GPT 4o-mini model (priced at $0.15/M token input and $0.60/M output), the same 1-hour SRT file cost less than $0.01, but took nearly 8 minutes to process.
 
-In contrast, using OpenAI's GPT 4o-mini model (priced at $0.15/M token input and $0.60/M output), the same 1-hour SRT file cost less than $0.01, but took nearly 8 minutes to process.
+Due to the poor time performance observed with the initial implementation, I decided to introduce parallelism in the translation process. The results were significant, as shown in the table below:
+
+| Thread count | xAI Grok-beta | OpenAI GPT 4o-mini |
+| ------------ | ------------- | ------------------ |
+| 1            | 6 min         | 8 min              |
+| 10           | 50 sec        | 45 sec             |
+| 20 (default) | 30 sec        | 25 sec             |
+| 50           | 75 sec        | 12 sec             |
+
+The translation time has been significantly reduced, but Grok was unable to handle the 50 parallel requests. The thread count can be defined using the MAX_CONCURRENT_CALLS environment variable, which I have set to 20 as the default, just to be safe. However, GPT 4o-mini can handle 50 threads without any issues.
