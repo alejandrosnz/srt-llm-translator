@@ -48,6 +48,7 @@ python srt_llm_translator.py --target-lang <target_language> --folder <path/to/d
 
 ### Parameters
 - `--target-lang`: The language code for the target language (e.g., `en` for English, `es` for Spanish).
+- `--source-lang`: Optional source language code, defaults to auto-detection if not specified.
 - `--file`: The path to the source SRT file.
 - `--folder`: The path to a directory where your source SRT files are.
 
