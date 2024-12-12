@@ -65,17 +65,25 @@ You can use other models by overwritting the following environment variables:
 ### OpenRouter
 
 ``` bash
-export OPENAI_API_KEY='your_OpenRouter_api_key'
-export OPENAI_MODEL=anthropic/claude-3.5-sonnet
 export OPENAI_API_URL=https://openrouter.ai/api/v1
+export OPENAI_API_KEY='your_OpenRouter_api_key'
+export OPENAI_MODEL=meta-llama/llama-3.2-3b-instruct
+```
+
+### Google Gemini
+
+```bash
+export OPENAI_API_URL=https://generativelanguage.googleapis.com/v1beta/openai
+export OPENAI_API_KEY='your_gemini_api_key'
+export OPENAI_MODEL=gemini-1.5-flash
 ```
 
 ### xAI Grok
 
 ```bash
+export OPENAI_API_URL=https://api.x.ai/v1
 export OPENAI_API_KEY='your_xAI_api_key'
 export OPENAI_MODEL=grok-beta
-export OPENAI_API_URL=https://api.x.ai/v1
 ```
 
 ## Cost and Performance
