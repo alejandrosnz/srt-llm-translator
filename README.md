@@ -51,6 +51,8 @@ python srt_llm_translator.py --target-lang <target_language> --folder <path/to/d
 - `--source-lang`: Optional source language code, defaults to auto-detection if not specified.
 - `--file`: The path to the source SRT file.
 - `--folder`: The path to a directory where your source SRT files are.
+- `--batch-size`: (optional) Number of SRT lines to translate per LLM request (defaults to 50)
+- `--debug`: (optional) Enable debug mode
 
 ## Example
 
@@ -96,7 +98,9 @@ Due to the poor time performance observed with the initial implementation, I dec
 | ------------ | ------------- | ------------------ |
 | 1            | 6 min         | 8 min              |
 | 10           | 50 sec        | 45 sec             |
-| 20 (default) | 30 sec        | 25 sec             |
+| 20           | 30 sec        | 25 sec             |
 | 50           | 75 sec        | 12 sec             |
 
-The translation time has been significantly reduced, but Grok was unable to handle the 50 parallel requests. The thread count can be defined using the MAX_CONCURRENT_CALLS environment variable, which I have set to 20 as the default, just to be safe. However, GPT 4o-mini can handle 50 threads without any issues.
+The translation time has been significantly reduced, but Grok was unable to handle the 50 parallel requests. The thread count can be defined using the MAX_CONCURRENT_CALLS environment variable, which I have set to 5 as the default, just to be safe. However, GPT 4o-mini can handle 50 threads without any issues.
+
+NOTE: These tests were conducted prior to batch optimizations. Previously, one language model request was made per SRT line; now, 50 lines are sent per request. This will speed up the translation process and avoid request-per-minute limits.
