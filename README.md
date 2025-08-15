@@ -4,8 +4,8 @@
 The SRT LLM Translator translates subtitles from one language to another using large language models. It preserves the original timestamps of the subtitles, making it easy to integrate translated subtitles back into video files.
 
 **Two ways to use this translator:**
-1. **Python Script** - Command-line tool for local execution
-2. **n8n Workflow** - Visual automation workflow for integration pipelines
+1. **[Python Script](#method-1-python-script)** - Command-line tool for local execution
+2. **[n8n Workflow](#method-2-n8n-workflow)** - Visual automation workflow for integration pipelines
 
 ## Features
 - Translates SRT subtitle files to a specified target language.
@@ -73,7 +73,7 @@ python srt_llm_translator.py --target-lang es --file sample/sample.srt
 
 # Method 2: n8n Workflow
 
-For those who prefer a visual workflow automation approach, I've migrated this translator to n8n. The n8n workflow provides a user-friendly interface and can be easily integrated into automation pipelines.
+For those who prefer a visual workflow automation approach, I've migrated this translator to n8n. The n8n workflow provides a user-friendly interface and can be easily integrated into automation pipelines [(more info here)](./n8n_workflow.json).
 
 ![n8n SRT Translator Workflow](./n8n/n8n_workflow.png)
 
