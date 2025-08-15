@@ -1,0 +1,676 @@
+{
+  "name": "SRT Translator",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "SRT Translator",
+        "formDescription": "Translate SRT subtitle files to any language",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "srt_file",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".srt",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "target_lang",
+              "placeholder": "Spanish",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "source_lang",
+              "placeholder": "English (default)"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        368
+      ],
+      "id": "6675de19-a0f3-4012-8980-f0a6b8a70f66",
+      "name": "On form submission",
+      "webhookId": "b7c12d8b-125f-4580-98f1-a39d266e9b51"
+    },
+    {
+      "parameters": {
+        "batchSize": 20,
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        944,
+        960
+      ],
+      "id": "2e5bbd84-bb2b-499e-ad05-52c8d1f7471d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: Subtitle Array Batch Splitter\n * Purpose: Splits subtitle arrays into smaller batches of 50 items for processing\n * Input: Items with 'subtitles' array property\n * Output: Multiple items, each containing a batch of subtitles with metadata\n */\n\n\nconst BATCH_SIZE = 50; // Split subtitle array into batches of 50\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const subtitles = item.json.subtitles || [];\n  \n  // If no subtitles, create an empty item\n  if (subtitles.length === 0) {\n    outputItems.push({\n      json: {\n        ...item.json,\n        batch_subtitles: [],\n        batch_number: 0,\n        batch_size: 0,\n        total_subtitles: 0,\n        total_batches: 0\n      },\n      binary: item.binary\n    });\n    continue;\n  }\n  \n  // Calculate total number of batches\n  const totalBatches = Math.ceil(subtitles.length / BATCH_SIZE);\n  \n  // Create batches\n  for (let i = 0; i < subtitles.length; i += BATCH_SIZE) {\n    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;\n    const batch = subtitles.slice(i, i + BATCH_SIZE);\n    \n    // Create new item for each batch\n    const batchItem = {\n      json: {\n        ...item.json, // Copy all original fields\n        batch_subtitles: batch,\n        batch_number: batchNumber,\n        batch_size: batch.length,\n        total_subtitles: subtitles.length,\n        total_batches: totalBatches,\n        batch_start_index: i + 1,\n        batch_end_index: Math.min(i + BATCH_SIZE, subtitles.length)\n      },\n      binary: item.binary\n    };\n    \n    outputItems.push(batchItem);\n  }\n}\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        960
+      ],
+      "id": "529089e6-83b0-40c1-8aca-653ce5a6dc0e",
+      "name": "Split in batches"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.batch_subtitles }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# Professional Subtitle Translation System\n\n## Role and Objective\nYou are an expert subtitle translator specializing in audiovisual content. Your primary task is to translate subtitle entries from the source language '{{ $json.source_lang || 'english' }}' to the target '{{ $json.target_lang }}' while maintaining narrative consistency and resolving linguistic ambiguities through contextual analysis.\n\n## Input Format\nYou will receive a JSON array containing subtitle entries with:\n- `index`: Sequential identifier for each subtitle line\n- `text`: The subtitle text to be translated\n\n## Core Translation Instructions\n\n### 1. Contextual Translation Strategy\n- **Use previous lines as context**: Before translating each line, analyze the preceding subtitle entries to understand:\n  - Character gender and relationships\n  - Narrative context and emotional tone\n  - Technical terminology or proper nouns\n  - Conversational flow and speaker identity\n- **Resolve ambiguities**: When the source language contains ambiguous elements (gender, formality level, implied subjects), use the established context from previous lines to make consistent choices\n\n### 2. Language Detection and Handling\n- If a line is already in {{ $json.target_lang }}, return it unchanged\n  - If a line is not in the defined source language ({{ $json.source_lang || 'english' }}), but you can infer the language, translate it to {{ $json.target_lang }}.\n- If text is empty, whitespace-only, or contains only symbols/numbers, preserve as-is\n\n### 3. Translation Quality Standards\n- **Preserve**: Tone, meaning, style, punctuation, and capitalization\n- **Maintain**: Subtitle timing constraints (keep similar length when possible)\n- **Ensure**: Natural flow in the target language\n- **Consider**: Cultural adaptation where necessary for comprehension\n\n## Output Requirements\n\n### Format\nReturn ONLY a valid JSON array with this exact structure:\n```json\n[\n  {\n    \"index\": int,\n    \"text\": \"string\"\n  }\n]\n```\n\n### Constraints\n- Do NOT add, remove, or reorder entries\n- Do NOT include explanations, comments, or text outside the JSON\n- Do NOT ask for clarification or additional context\n- Maintain the exact same number of entries as the input\n\n## Examples\n\n### Input:\n```json\n[\n  {\"index\": 47, \"text\": \"Maria walked into the room.\"},\n  {\"index\": 48, \"text\": \"She looked tired.\"},\n  {\"index\": 49, \"text\": \"Good morning, doctor.\"}\n]\n```\n\n### Output (English to Spanish):\n```json\n[\n  {\"index\": 47, \"text\": \"María entró en la habitación.\"},\n  {\"index\": 48, \"text\": \"Se veía cansada.\"},\n  {\"index\": 49, \"text\": \"Buenos días, doctora.\"}\n]\n```\n\n*Note: In line 49, \"doctora\" (feminine) is used because the context from previous lines established that Maria is the doctor being addressed.*\n\n## Processing Instructions\n1. Read all entries in the batch first\n2. Analyze the contextual flow and character information\n3. Translate each line considering the established context\n4. Ensure consistency across all translations in the batch\n5. Output the complete JSON array\n\nBegin translation:"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1168,
+        1056
+      ],
+      "id": "fa324ca2-d14f-4e2d-953e-fb34f213235c",
+      "name": "Translate",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        1280
+      ],
+      "id": "a2d4f07d-8b26-488c-a241-fa1bb34d5f37",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1J41lCl0VYvO1ogd",
+          "name": "Google Gemini (AI Studio)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"json_schema\",\n  \"json_schema\": {\n    \"name\": \"translation_batch\",\n    \"schema\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"index\": {\n            \"type\": \"integer\"\n          },\n          \"text\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"index\",\n          \"text\"\n        ],\n        \"additionalProperties\": false\n      }\n    }\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        1280
+      ],
+      "id": "65e1090f-f701-4828-a219-8710c395e857",
+      "name": "Structured Format",
+      "notes": "Sample:\n\n[\n  {\n    \"index\": 1,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  },\n  {\n    \"index\": 2,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  }\n]"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "subtitles,subtitles_translated,srt_file,target_lang",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        688
+      ],
+      "id": "0347a11d-698e-49db-8a57-78c68168cadc",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: Translation Batch Merger and SRT Data Combiner\n * Purpose: Merges all translation batches back together and combines with original SRT parse data\n * Input: Items with translation 'output' arrays and access to 'Parse SRT' node data\n * Output: Single item with all translations sorted by index and combined with SRT metadata\n */\n\nconst allTranslations = [];\n// Collect all translations from all items\nfor (const item of $input.all()) {\n  const output = item.json.output || [];\n  \n  for (const translation of output) {\n    allTranslations.push(translation);\n  }\n}\n// Sort by index\nallTranslations.sort((a, b) => a.index - b.index);\n// Get data from Parse SRT node\nconst parseSRTData = $('Parse SRT').all();\n// Create output item combining both data sets\nconst outputItem = {\n  json: {\n    // Translation data\n    subtitles_translated: allTranslations,\n    total_translations: allTranslations.length,\n    \n    // Specific Parse SRT data\n    parse_srt_data: parseSRTData.map(item => ({\n      srt_file: item.json.srt_file,\n      filename: item.json.filename,\n      submittedAt: item.json.submittedAt\n    })),\n    \n    // If there's only one item in Parse SRT, also include its fields directly\n    ...(parseSRTData.length === 1 ? parseSRTData[0].json : {})\n  }\n};\nreturn [outputItem];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        768
+      ],
+      "id": "5cd06f32-11cd-49a2-98dd-20afec9f6b26",
+      "name": "Join batches"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: Binary File Content Processor\n * Purpose: Reads Base64 binary file data, converts to UTF-8 string, and cleans up carriage returns\n * Input: Items with binary data in 'srt_file' property\n * Output: Items with file content added to JSON and binary data removed\n */\n\n// Read Base64 binary file and remove file after processing\nfor (const item of $input.all()) {\n  // Get the binary file\n  const binaryData = item.binary['srt_file'];\n  \n  if (binaryData) {\n    // Content comes in Base64, decode it\n    const fileContentBase64 = binaryData.data;\n    \n    // Decode from Base64 using Buffer (available in n8n)\n    const buffer = Buffer.from(fileContentBase64, 'base64');\n    let contentAsString = buffer.toString('utf-8');\n    \n    // Remove \\r (carriage returns)\n    contentAsString = contentAsString.replace(/\\r/g, '');\n    \n    // Add content to the item's JSON\n    item.json.file_content = contentAsString;\n    item.json.file_name = binaryData.fileName;\n    item.json.file_mime_type = binaryData.mimeType;\n    \n    // Remove the already processed binary file\n    delete item.binary['srt_file'];\n  }\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        736
+      ],
+      "id": "b93bf1ed-b7d9-4f55-9b91-41beef9db71c",
+      "name": "Decode SRT File"
+    },
+    {
+      "parameters": {
+        "content": "## Translate SRT\nTranslate the SRT lines in batches",
+        "height": 720,
+        "width": 784,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        704
+      ],
+      "typeVersion": 1,
+      "id": "d5af9b78-bd35-4059-a196-4741fd1dd38a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Parse SRT\nReturns SRT contents as a JSON array",
+        "height": 240,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        656
+      ],
+      "typeVersion": 1,
+      "id": "474703af-3916-40af-a612-b8cdd95cfa8f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n */\n\nfor (const item of $input.all()) {\n  // Get SRT content\n  const srtContent = item.json.file_content || '';\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Add to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        736
+      ],
+      "id": "ab21a1bd-caa9-439a-be56-33b4ff7bac7e",
+      "name": "Parse SRT"
+    },
+    {
+      "parameters": {
+        "content": "## Generate SRT\nRetrieve the translated lines and creates a new SRT file",
+        "height": 240,
+        "width": 576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1504,
+        608
+      ],
+      "typeVersion": 1,
+      "id": "0171c8bc-0212-4140-b013-b8c699ba1013",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: Original and Translated Subtitle Merger\n * Purpose: Merges original subtitles with translations based on index, preserving timing data\n * Input: Items with nested data containing 'subtitles' and 'subtitles_translated' arrays\n * Output: Items with merged subtitles using original timing and translated text\n */\n\nconst inputData = $input.all();\nconst results = [];\nfor (const item of inputData) {\n  const data = item.json.data?.[0] || item.json; // Fallback to root if nested structure missing\n  \n  // Extract subtitle arrays\n  const originalSubtitles = data.subtitles || [];\n  const translatedSubtitles = data.subtitles_translated || [];\n  \n  // Create translation map by index for fast lookup\n  const translationsMap = {};\n  translatedSubtitles.forEach(translation => {\n    translationsMap[translation.index] = translation.text;\n  });\n  \n  // Merge subtitles: use original timing + translated text\n  const mergedSubtitles = originalSubtitles.map(subtitle => {\n    const translatedText = translationsMap[subtitle.index];\n    \n    return {\n      index: subtitle.index,\n      start: subtitle.start,\n      end: subtitle.end,\n      text: translatedText || subtitle.text // Use translation if exists, otherwise original\n    };\n  });\n  \n  // Create the result\n  results.push({\n    json: {\n      merged_subtitles: mergedSubtitles,\n      target_lang: data.target_lang,\n      srt_file: data.srt_file,\n      total_subtitles: mergedSubtitles.length\n    }\n  });\n}\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        688
+      ],
+      "id": "0eee1a1b-9b9f-4382-a9d0-0d9ea8ec8bf5",
+      "name": "Merge Original and Translated Subtitles"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * N8N Code Box: SRT File Generator from Merged Subtitles\n * Purpose: Converts merged subtitle data back to SRT format and creates binary file\n * Input: Items with 'merged_subtitles' array containing subtitle objects\n * Output: Items with SRT content as text and binary file, plus metadata (lines, size)\n */\n\n// Generate SRT file from merged subtitles\nfor (const item of $input.all()) {\n  const mergedSubtitles = item.json.merged_subtitles || [];\n  \n  if (mergedSubtitles.length === 0) {\n    item.json.srt_content = '';\n    item.json.srt_lines = 0;\n    continue;\n  }\n  \n  // Sort by index to ensure correct order\n  const sortedSubtitles = mergedSubtitles.sort((a, b) => a.index - b.index);\n  \n  // Generate SRT content\n  const srtBlocks = [];\n  \n  for (const subtitle of sortedSubtitles) {\n    // SRT format:\n    // Subtitle number\n    // start_timestamp --> end_timestamp\n    // Subtitle text\n    // Empty line\n    \n    const srtBlock = `${subtitle.index}\n${subtitle.start} --> ${subtitle.end}\n${subtitle.text}`;\n    \n    srtBlocks.push(srtBlock);\n  }\n  \n  // Join blocks with double line break\n  const srtContent = srtBlocks.join('\\n\\n');\n  \n  // Add SRT content to item\n  item.json.srt_content = srtContent;\n  item.json.srt_lines = srtBlocks.length;\n  item.json.srt_size = srtContent.length;\n  \n  // Create binary SRT file\n  const originalFileName = item.json.file_name || 'subtitles.srt';\n  const targetLang = item.json.target_lang || 'translated';\n  \n  // Generate new filename: originalname.TARGET_LANG.srt\n  const fileNameWithoutExt = originalFileName.replace(/\\.srt$/i, '');\n  const newFileName = `${fileNameWithoutExt}.${targetLang}.srt`;\n  \n  // Convert to Base64 for binary storage\n  const buffer = Buffer.from(srtContent, 'utf-8');\n  const base64Content = buffer.toString('base64');\n  \n  // Add as binary file\n  item.binary = item.binary || {};\n  item.binary['translated_srt'] = {\n    data: base64Content,\n    fileName: newFileName,\n    mimeType: 'text/plain'\n  };\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1968,
+        688
+      ],
+      "id": "ece3040f-e002-428e-9552-c6e7bb98458f",
+      "name": "Generate SRT file"
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "srt_file",
+              "type": "object"
+            },
+            {
+              "name": "target_lang"
+            },
+            {
+              "name": "source_lang"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        736
+      ],
+      "id": "443b1c29-7756-4242-87cf-954f69f4135d",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "TSC308ZSYRosMX2d",
+          "mode": "list",
+          "cachedResultName": "SRT Translator"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "srt_file": "={{ $json.srt_file }}",
+            "target_lang": "={{ $json.target_lang }}",
+            "source_lang": "={{ $json.source_lang }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "srt_file",
+              "displayName": "srt_file",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "target_lang",
+              "displayName": "target_lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "source_lang",
+              "displayName": "source_lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        368
+      ],
+      "id": "ab6d00df-b98c-43e5-b87b-0bc55f9c339d",
+      "name": "Execute SRT Translate",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "returnBinary",
+        "completionTitle": "Translation Complete ✅",
+        "completionMessage": "Your subtitle file has been successfully translated and is ready for download.",
+        "inputDataFieldName": "translated_srt",
+        "limitWaitTime": true,
+        "resumeAmount": 5,
+        "resumeUnit": "minutes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        496,
+        272
+      ],
+      "id": "01f85c7e-9573-4130-96bc-9c19bce7f6f4",
+      "name": "Form OK",
+      "webhookId": "e0d24235-f334-4ace-bbfd-02c60dbca53e"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Translation Failed ❌",
+        "completionMessage": "There was an error processing your subtitle file. Please try again",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        496,
+        464
+      ],
+      "id": "616eee9a-fd7a-4e24-940d-b6197798bae2",
+      "name": "Form ERROR",
+      "webhookId": "4ec6cedc-b0e8-4cd7-9625-aafb357c3494"
+    },
+    {
+      "parameters": {
+        "errorMessage": " There was an error processing the subtitle file"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        688
+      ],
+      "id": "d5751e41-c45a-439f-b09a-ccaec0354625",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ff759d9-1b87-4861-9dbd-e9dabd0358eb",
+              "leftValue": "={{ $json.total_subtitles }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2192,
+        688
+      ],
+      "id": "064bddf5-c266-4068-bfb7-9a6d71d0004c",
+      "name": "Translation OK?"
+    },
+    {
+      "parameters": {
+        "content": "### Check for ERROR\nRaises an error if there are no lines translated",
+        "height": 240,
+        "width": 352,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2176,
+        608
+      ],
+      "typeVersion": 1,
+      "id": "502995c7-6995-4c83-989c-7f81f26c6b59",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Execute SRT Translate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Join batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Translate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in batches": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Format": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge Original and Translated Subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join batches": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode SRT File": {
+      "main": [
+        [
+          {
+            "node": "Parse SRT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse SRT": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split in batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Original and Translated Subtitles": {
+      "main": [
+        [
+          {
+            "node": "Generate SRT file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate SRT file": {
+      "main": [
+        [
+          {
+            "node": "Translation OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Decode SRT File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SRT Translate": {
+      "main": [
+        [
+          {
+            "node": "Form OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Form ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form OK": {
+      "main": [
+        []
+      ]
+    },
+    "Form ERROR": {
+      "main": [
+        []
+      ]
+    },
+    "Translation OK?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "837c3ed6-6f38-4819-a1ad-f9c52ae5f4c3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
+  },
+  "id": "TSC308ZSYRosMX2d",
+  "tags": [
+    {
+      "createdAt": "2025-08-15T08:45:14.160Z",
+      "updatedAt": "2025-08-15T08:45:14.160Z",
+      "id": "G0TlfAREHa2NX1Lk",
+      "name": "done"
+    },
+    {
+      "createdAt": "2025-08-15T08:45:03.140Z",
+      "updatedAt": "2025-08-15T08:45:03.140Z",
+      "id": "iiq7yealSFabpVUg",
+      "name": "ai"
+    }
+  ]
+}
