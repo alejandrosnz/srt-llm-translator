@@ -73,7 +73,7 @@ python srt_llm_translator.py --target-lang es --file sample/sample.srt
 
 # Method 2: n8n Workflow
 
-For those who prefer a visual workflow automation approach, I've migrated this translator to n8n. The n8n workflow provides a user-friendly interface and can be easily integrated into automation pipelines [(more info here)](./n8n_workflow.json).
+For those who prefer a visual workflow automation approach, I've migrated this translator to n8n. The n8n workflow provides a user-friendly interface and can be easily integrated into automation pipelines [(more info here)](./n8n).
 
 ![n8n SRT Translator Workflow](./n8n/n8n_workflow.png)
 
