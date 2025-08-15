@@ -161,7 +161,25 @@ class SubtitleTranslator:
                             {"role": "user", "content": json.dumps(batch_data, ensure_ascii=False)},
                         ],
                         temperature=0,
-                        response_format={"type": "json_object"}
+                        response_format={
+                            "type": "json_schema",
+                            "json_schema": {
+                                "name": "translation_batch",
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "index": {"type": "integer"},
+                                            "text": {"type": "string"}
+                                        },
+                                        "required": ["index", "text"],
+                                        "additionalProperties": False
+                                    }
+                                }
+                            }
+                        }
+
                     )
 
                     raw_content = response.choices[0].message.content
