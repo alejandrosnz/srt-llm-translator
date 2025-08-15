@@ -1,12 +1,21 @@
 # SRT LLM Translator
 
 ## Overview
-The SRT LLM Translator is a Python-based tool that translates subtitles from one language to another using large language models. It preserves the original timestamps of the subtitles, making it easy to integrate translated subtitles back into video files.
+The SRT LLM Translator translates subtitles from one language to another using large language models. It preserves the original timestamps of the subtitles, making it easy to integrate translated subtitles back into video files.
+
+**Two ways to use this translator:**
+1. **Python Script** - Command-line tool for local execution
+2. **n8n Workflow** - Visual automation workflow for integration pipelines
 
 ## Features
 - Translates SRT subtitle files to a specified target language.
 - Maintains original timestamps for seamless integration.
 - Utilizes OpenAI's API for translation.
+- Support for multiple LLM providers (OpenAI, Gemini, Grok, OpenRouter)
+
+---
+
+# Method 1: Python Script
 
 ## Requirements
 - Python 3.x
@@ -59,6 +68,39 @@ python srt_llm_translator.py --target-lang <target_language> --folder <path/to/d
 ``` bash
 python srt_llm_translator.py --target-lang es --file sample/sample.srt
 ```
+
+---
+
+# Method 2: n8n Workflow
+
+For those who prefer a visual workflow automation approach, I've migrated this translator to n8n. The n8n workflow provides a user-friendly interface and can be easily integrated into automation pipelines.
+
+![n8n SRT Translator Workflow](./n8n/n8n_workflow.png)
+
+### Features of the n8n Workflow:
+- Web-based form interface for easy file upload
+- Direct file download of translated SRT
+- Visual workflow management
+- No command-line required
+
+### Getting the n8n Workflow:
+You can download and import the complete n8n workflow:
+
+📁 **[Download n8n Workflow](./n8n/n8n_workflow.json)**
+
+### Setup Instructions for n8n:
+1. Download the workflow JSON file
+2. Import it into your n8n instance
+3. Configure your LLM API credentials in the 'Model' node
+4. Execute the workflow
+
+The n8n version maintains the functionality of the Python script while providing better visualization and easier integration with other automation tools.
+
+But at the moment, it doesn't not work with multiple files.
+
+---
+
+# Script Configuration Options
 
 ## Other models
 
