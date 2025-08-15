@@ -65,21 +65,87 @@ class SubtitleTranslator:
                 Guidelines:
                 - Do NOT add or remove entries.
                 - Do NOT include anything outside the JSON array.
-                - Do NOT ask for any context or explanation.
-                - If a text is empty or whitespace, return an empty string for 'text'.
-                - Preserve punctuation and capitalization.
+                # Professional Subtitle Translation System
 
-                Example input:
-                [
-                    {{"index": 1, "text": "Hello, how are you?"}},
-                    {{"index": 2, "text": "This is a test."}}
-                ]
+                ## Role and Objective
+                You are an expert subtitle translator specializing in audiovisual content. Your primary task is to translate subtitle entries
+                 from the source language '{source_language}' to the target '{target_language}', while maintaining narrative consistency 
+                 and resolving linguistic ambiguities through contextual analysis.
 
-                Example output (English to Spanish):
+                ## Input Format
+                You will receive a JSON array containing subtitle entries with:
+                - `index`: Sequential identifier for each subtitle line
+                - `text`: The subtitle text to be translated
+
+                ## Core Translation Instructions
+
+                ### 1. Contextual Translation Strategy
+                - **Use previous lines as context**: Before translating each line, analyze the preceding subtitle entries to understand:
+                - Character gender and relationships
+                - Narrative context and emotional tone
+                - Technical terminology or proper nouns
+                - Conversational flow and speaker identity
+                - **Resolve ambiguities**: When the source language contains ambiguous elements (gender, formality level, implied subjects),
+                 use the established context from previous lines to make consistent choices
+
+                ### 2. Language Detection and Handling
+                - If a line is already in {target_language}, return it unchanged
+                - If a line is not in the defined source language ({source_language}), but you can infer the language, translate it to {target_language}.
+                - If text is empty, whitespace-only, or contains only symbols/numbers, preserve as-is
+
+                ### 3. Translation Quality Standards
+                - **Preserve**: Tone, meaning, style, punctuation, and capitalization
+                - **Maintain**: Subtitle timing constraints (keep similar length when possible)
+                - **Ensure**: Natural flow in the target language
+                - **Consider**: Cultural adaptation where necessary for comprehension
+
+                ## Output Requirements
+
+                ### Format
+                Return ONLY a valid JSON array with this exact structure:
+                ```json
                 [
-                    {{"index": 1, "text": "Hola, ¿cómo estás?"}},
-                    {{"index": 2, "text": "Esto es una prueba."}}
+                    {{
+                        "index": int,
+                        "text": string
+                    }},
                 ]
+                ```
+
+                ### Constraints
+                - Do NOT add, remove, or reorder entries
+                - Do NOT include explanations, comments, or text outside the JSON
+                - Do NOT ask for clarification or additional context
+                - Maintain the exact same number of entries as the input
+
+                ## Examples
+
+                ### Input:
+                ```json
+                [
+                    {{"index": 47, "text": "Maria walked into the room."}},
+                    {{"index": 48, "text": "She looked tired."}},
+                    {{"index": 49, "text": "Good morning, doctor."}}
+                ]
+                ```
+
+                ### Output (English to Spanish):
+                ```json
+                [
+                    {{"index": 47, "text": "María entró en la habitación."}},
+                    {{"index": 48, "text": "Se veía cansada."}},
+                    {{"index": 49, "text": "Buenos días, doctora."}}
+                ]
+                ```
+
+                *Note: In line 49, "doctora" (feminine) is used because the context from previous lines established that Maria is the doctor being addressed.*
+
+                ## Processing Instructions
+                1. Read all entries in the batch first
+                2. Analyze the contextual flow and character information
+                3. Translate each line considering the established context
+                4. Ensure consistency across all translations in the batch
+                5. Output the complete JSON array
                 """
 
             for attempt in range(1, self.max_retries + 1):

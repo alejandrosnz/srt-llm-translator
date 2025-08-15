@@ -6,7 +6,7 @@ from src.translate import translate_subtitles
 
 async def main():
     parser = argparse.ArgumentParser(description="SRT file translator using LLM.")
-    parser.add_argument("--source-lang", type=str, default="'detect the source language'", help="Source language (e.g.: SPANISH).")
+    parser.add_argument("--source-lang", type=str, default="'auto-infer the source language'", help="Source language (e.g.: SPANISH).")
     parser.add_argument("--target-lang", type=str, required=True, help="Target language (e.g.: ENGLISH).")
     parser.add_argument("--file", type=str, help="Source SRT file path.")
     parser.add_argument("--folder", type=str, help="Source folder of SRT files.")
