@@ -82,6 +82,21 @@ The workflow uses **Google Gemini 2.5 Flash Lite** for translation with:
 5. Click submit
 6. Download the translated file
 
+## Telegram Integration
+
+You can also send SRT subtitle files directly via Telegram. Simply upload your `.srt` file to the designated Telegram bot or channel. In the file description, specify the target language (required) and optionally the source language, using natural language. For example:
+
+- **Description:** `Translate to French (source: English)`
+- **Description:** `Spanish` (auto-detects source language)
+
+The workflow will process the file, translate the subtitles, and return the translated SRT file via Telegram.
+
+**Features:**
+- Easy file upload through Telegram
+- Specify languages in plain text in the file description
+- Source language is optional (auto-detected if not provided)
+- Translated file is sent back directly in Telegram
+
 ## Translation Quality Features
 
 - **Context Awareness**: Maintains character consistency across dialogue
