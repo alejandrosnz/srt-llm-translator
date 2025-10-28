@@ -191,6 +191,9 @@ class SubtitleTranslator:
 
                     translated_batch = json.loads(self.clean_json_text(raw_content))
 
+                    if len(translated_batch) != len(batch):
+                        raise ValueError(f"Mismatched number of lines. Expected {len(batch)}, got {len(translated_batch)}")
+
                     # Combine the translated batch with the original batch
                     result = []
                     index_to_sub = {sub.index: sub for sub in batch}
