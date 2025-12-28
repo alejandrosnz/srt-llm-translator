@@ -40,7 +40,7 @@
     },
     {
       "parameters": {
-        "batchSize": "={{ $json.NUM_PARALLEL_BATCHES }}",
+        "batchSize": "={{ $('CONFIG').item.json.BATCH_PARALLEL_COUNT }}",
         "options": {
           "reset": false
         }
@@ -76,7 +76,7 @@
         "messages": {
           "messageValues": [
             {
-              "message": "=# Professional Subtitle Translation System\n\n## Role and Objective\nYou are an expert subtitle translator specializing in audiovisual content. Your primary task is to translate subtitle entries from the source language '{{ $json.source_lang || 'english' }}' to the target '{{ $json.target_lang }}' while maintaining narrative consistency and resolving linguistic ambiguities through contextual analysis.\n\n## Input Format\nYou will receive a JSON array containing subtitle entries with:\n- `index`: Sequential identifier for each subtitle line\n- `text`: The subtitle text to be translated\n\n## Core Translation Instructions\n\n### 1. Contextual Translation Strategy\n- **Use previous lines as context**: Before translating each line, analyze the preceding subtitle entries to understand:\n  - Character gender and relationships\n  - Narrative context and emotional tone\n  - Technical terminology or proper nouns\n  - Conversational flow and speaker identity\n- **Resolve ambiguities**: When the source language contains ambiguous elements (gender, formality level, implied subjects), use the established context from previous lines to make consistent choices\n\n### 2. Language Detection and Handling\n- If a line is already in {{ $json.target_lang }}, return it unchanged\n  - If a line is not in the defined source language ({{ $json.source_lang || 'english' }}), but you can infer the language, translate it to {{ $json.target_lang }}.\n- If text is empty, whitespace-only, or contains only symbols/numbers, preserve as-is\n\n### 3. Translation Quality Standards\n- **Preserve**: Tone, meaning, style, punctuation, and capitalization\n- **Maintain**: Subtitle timing constraints (keep similar length when possible)\n- **Ensure**: Natural flow in the target language\n- **Consider**: Cultural adaptation where necessary for comprehension\n\n## Output Requirements\n\n### Format\nReturn ONLY a valid JSON array with this exact structure:\n```json\n[\n  {\n    \"index\": int,\n    \"text\": \"string\"\n  }\n]\n```\n\n### Constraints\n- Do NOT add, remove, or reorder entries\n- Do NOT include explanations, comments, or text outside the JSON\n- Do NOT ask for clarification or additional context\n- Maintain the exact same number of entries as the input\n\n## Examples\n\n### Input:\n```json\n[\n  {\"index\": 47, \"text\": \"Maria walked into the room.\"},\n  {\"index\": 48, \"text\": \"She looked tired.\"},\n  {\"index\": 49, \"text\": \"Good morning, doctor.\"}\n]\n```\n\n### Output (English to Spanish):\n```json\n[\n  {\"index\": 47, \"text\": \"María entró en la habitación.\"},\n  {\"index\": 48, \"text\": \"Se veía cansada.\"},\n  {\"index\": 49, \"text\": \"Buenos días, doctora.\"}\n]\n```\n\n*Note: In line 49, \"doctora\" (feminine) is used because the context from previous lines established that Maria is the doctor being addressed.*\n\n## Processing Instructions\n1. Read all entries in the batch first\n2. Analyze the contextual flow and character information\n3. Translate each line considering the established context\n4. Ensure consistency across all translations in the batch\n5. Output the complete JSON array\n\nBegin translation:"
+              "message": "=# Professional Subtitle Translation System\n\n## Role and Objective\nYou are an expert subtitle translator specializing in audiovisual content. Your primary task is to translate subtitle entries from the source language '{{ $json.source_lang || 'english' }}' to the target '{{ $json.target_lang }}' while maintaining narrative consistency and resolving linguistic ambiguities through contextual analysis.\n\n## Input Format\nYou will receive a JSON array containing subtitle entries with:\n- `index`: Sequential identifier for each subtitle line\n- `text`: The subtitle text to be translated\n\n## Core Translation Instructions\n\n### 1. Contextual Translation Strategy\n- **Use previous lines as context**: Before translating each line, analyze the preceding subtitle entries to understand:\n  - Character gender and relationships\n  - Narrative context and emotional tone\n  - Technical terminology or proper nouns\n  - Conversational flow and speaker identity\n- **Resolve ambiguities**: When the source language contains ambiguous elements (gender, formality level, implied subjects), use the established context from previous lines to make consistent choices\n\n### 2. Language Detection and Handling\n- If a line is already in {{ $json.target_lang }}, return it unchanged\n  - If a line is not in the defined source language ({{ $json.source_lang || 'english' }}), but you can infer the language, translate it to {{ $json.target_lang }}.\n- If text is empty, whitespace-only, or contains only symbols/numbers, preserve as-is\n\n### 3. Translation Quality Standards\n- **Preserve**: Tone, meaning, style, punctuation, and capitalization\n- **Maintain**: Subtitle timing constraints (keep similar length when possible)\n- **Ensure**: Natural flow in the target language\n- **Consider**: Cultural adaptation where necessary for comprehension\n\n## Output Requirements\n\n### Format\nReturn ONLY a valid JSON object with the output array with this exact structure:\n```json\n{\n  \"output\": [\n    {\n      \"index\": int,\n      \"text\": \"string\"\n    },\n    ...\n  ]\n}\n```\n\n### Constraints\n- Do NOT add, remove, or reorder entries\n- Do NOT include explanations, comments, or text outside the JSON\n- Do NOT ask for clarification or additional context\n- Maintain the exact same number of entries as the input\n\n## Examples\n\n### Input:\n```json\n{\n  \"output\": [\n    {\"index\": 47, \"text\": \"Maria walked into the room.\"},\n    {\"index\": 48, \"text\": \"She looked tired.\"},\n    {\"index\": 49, \"text\": \"Good morning, doctor.\"}\n  ]\n}\n```\n\n### Output (English to Spanish):\n```json\n{\n  \"output\": [\n    {\"index\": 47, \"text\": \"María entró en la habitación.\"},\n    {\"index\": 48, \"text\": \"Se veía cansada.\"},\n    {\"index\": 49, \"text\": \"Buenos días, doctora.\"}\n  ]\n}\n```\n\n*Note: In line 49, \"doctora\" (feminine) is used because the context from previous lines established that Maria is the doctor being addressed.*\n\n## Processing Instructions\n1. Read all entries in the batch first\n2. Analyze the contextual flow and character information\n3. Translate each line considering the established context\n4. Ensure consistency across all translations in the batch\n5. Output the same items count as the input\n\nBegin translation:"
             }
           ]
         },
@@ -659,46 +659,6 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash-lite",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1456,
-        1376
-      ],
-      "id": "a2d4f07d-8b26-488c-a241-fa1bb34d5f37",
-      "name": "Gemini 2.5 Flash Lite",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "1J41lCl0VYvO1ogd",
-          "name": "Google Gemini (AI Studio)"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-flash-lite",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        1568,
-        1392
-      ],
-      "id": "776590cb-f149-475d-aa7d-cbe4680ef722",
-      "name": "Gemini 2.5 Flash Lite (Fallback)",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "l6HzUlGl2bnXQ7h4",
-          "name": "Google Gemini (AI Studio) [BACKUP]"
-        }
-      }
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -743,12 +703,15 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"json_schema\",\n  \"json_schema\": {\n    \"name\": \"translation_batch\",\n    \"schema\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"index\": {\n            \"type\": \"integer\"\n          },\n          \"text\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"index\",\n          \"text\"\n        ],\n        \"additionalProperties\": false\n      }\n    }\n  }\n}"
+        "inputSchema": "{\n  \"json_schema\": {\n    \"name\": \"translation_batch\",\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"output\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"index\": {\n                \"type\": \"integer\"\n              },\n              \"text\": {\n                \"type\": \"string\"\n              }\n            },\n            \"required\": [\n              \"index\",\n              \"text\"\n            ]\n          }\n        }\n      },\n      \"required\": [\n        \"output\"\n      ]\n    }\n  }\n}",
+        "autoFix": true,
+        "customizeRetryPrompt": true,
+        "prompt": "# System Prompt: JSON Response Repair Agent\n\nYou are a specialized agent whose sole purpose is to repair malformed LLM responses and convert them into a valid JSON format.\n\nInstructions:\n--------------\n{instructions}\n--------------\nCompletion:\n--------------\n{completion}\n--------------\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:\n\n## Your Task\nTransform the malformed completion into the following exact JSON structure:\n\n### Required Output Format:\n```json\n{{\n  \"output\": [\n    {{\"index\": 47, \"text\": \"María entró en la habitación.\"}},\n    {{\"index\": 48, \"text\": \"Se veía cansada.\"}},\n    {{\"index\": 49, \"text\": \"Buenos días, doctora.\"}}\n  ]\n}}\n```\n\n## Rules:\n1. **Always return valid JSON** with the exact structure shown above\n2. **Extract all index-text pairs** from the malformed response, even if they're embedded in markdown, prose, or other formatting\n3. **Preserve the original text content** exactly as it appears (don't translate, modify, or \"fix\" the text itself)\n4. **Maintain index order** - sort items by index in ascending order\n5. **If the original response was empty or contained no valid data**, return:\n```json\n{{\n  \"output\": []\n}}\n```\n6. **Remove any markdown formatting** (```json, backticks, code blocks, etc.)\n7. **Handle edge cases**:\n   - Missing indexes: skip those items or try to infer from context\n   - Duplicate indexes: keep the first occurrence\n   - Non-integer indexes: attempt to convert to integer, or skip if impossible\n\n## Examples of Input You Might Receive:\n\n**Example 1 - Markdown wrapped:**\n```\nHere are your translations:\n```json\n{{\"output\": [{{\"index\": 1, \"text\": \"Hola\"}}]}}\n```\n```\n\n**Example 2 - Prose format:**\n```\nSure! Here are the results:\n- Index 1: \"Hola mundo\"\n- Index 2: \"Adiós\"\n```\n\n**Example 3 - Partial JSON:**\n```\n{{\"output\": [{{\"index\": 5, \"text\": \"Test\"\n```\n\n**Example 4 - Empty response:**\n```\nI apologize, but I couldn't process that request.\n```\n\n## Your Response:\nReturn ONLY the valid JSON object. No explanations, no markdown formatting, no additional text.\n"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1744,
+        1664,
         1392
       ],
       "id": "65e1090f-f701-4828-a219-8710c395e857",
@@ -793,26 +756,6 @@
       ],
       "id": "d5751e41-c45a-439f-b09a-ccaec0354625",
       "name": "Return ERROR"
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-flash-lite",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        656,
-        1936
-      ],
-      "id": "765848d7-30a9-43e2-9327-6e31122b7663",
-      "name": "Gemini 2.5 Flash Lite (target extractor)",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "1J41lCl0VYvO1ogd",
-          "name": "Google Gemini (AI Studio)"
-        }
-      }
     },
     {
       "parameters": {
@@ -897,13 +840,13 @@
           "assignments": [
             {
               "id": "10c0668b-1098-479f-806c-dcca01dc9f54",
-              "name": "BATCHES_SIZE",
-              "value": 50,
+              "name": "BATCH_SIZE",
+              "value": 100,
               "type": "number"
             },
             {
               "id": "6b1ce68c-b08d-4e46-97eb-314c2be5ab39",
-              "name": "NUM_PARALLEL_BATCHES",
+              "name": "BATCH_PARALLEL_COUNT",
               "value": 5,
               "type": "number"
             }
@@ -940,37 +883,69 @@
       ],
       "id": "d1142800-062d-4d3d-a3d7-fba91944a944",
       "name": "Read file contents"
-    }
-  ],
-  "pinData": {
-    "When Executed by Another Workflow": [
-      {
-        "json": {
-          "srt_file": {
-            "filename": "sample.srt",
-            "mimetype": "application/octet-stream",
-            "size": 277
-          },
-          "target_lang": "spanish",
-          "source_lang": "",
-          "binary_file_name": "srt_file"
-        },
-        "binary": {
-          "srt_file": {
-            "mimeType": "application/octet-stream",
-            "fileExtension": "bin",
-            "data": "filesystem-v2",
-            "fileName": "sample.srt",
-            "id": "filesystem-v2:workflows/TSC308ZSYRosMX2d/executions/temp/binary_data/88890fe7-c077-4078-8054-e4ce276afa0b",
-            "fileSize": "277 B"
-          }
-        },
-        "pairedItem": {
-          "item": 0
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4.1-nano",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        1424
+      ],
+      "id": "658ffd02-5a34-42fc-a392-932cb0814341",
+      "name": "OpenRouter - GPT 4.1 Nano",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WKMEjAgrYCTBBx2B",
+          "name": "OpenRouter - n8n"
         }
       }
-    ]
-  },
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        1392
+      ],
+      "id": "59e0fc9b-ff19-4ef0-88b9-951ee255dcd6",
+      "name": "OpenRouter - Gemini 2.5 Flash Lite",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WKMEjAgrYCTBBx2B",
+          "name": "OpenRouter - n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        656,
+        1952
+      ],
+      "id": "8f0f369e-b74b-4a21-a0e2-1990b91a3e91",
+      "name": "OpenRouter - Gemini 2.5 Flash Lite (target extractor)",
+      "credentials": {
+        "openRouterApi": {
+          "id": "WKMEjAgrYCTBBx2B",
+          "name": "OpenRouter - n8n"
+        }
+      }
+    }
+  ],
+  "pinData": {},
   "connections": {
     "On form submission": {
       "main": [
@@ -1214,28 +1189,6 @@
         []
       ]
     },
-    "Gemini 2.5 Flash Lite": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Translate",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gemini 2.5 Flash Lite (Fallback)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Translate",
-            "type": "ai_languageModel",
-            "index": 1
-          }
-        ]
-      ]
-    },
     "Translation kept index?": {
       "main": [
         [
@@ -1271,17 +1224,6 @@
           {
             "node": "Merge Original and Translated Subtitles",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Gemini 2.5 Flash Lite (target extractor)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Extract Source & Target Lang",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -1326,13 +1268,51 @@
           }
         ]
       ]
+    },
+    "OpenRouter - GPT 4.1 Nano": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_languageModel",
+            "index": 1
+          },
+          {
+            "node": "SRT indexed array format",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Gemini 2.5 Flash Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Translate",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Gemini 2.5 Flash Lite (target extractor)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Source & Target Lang",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "46c3279c-7070-451c-b873-9d515c2a21d0",
+  "versionId": "604c688f-ad12-4807-a30b-7ceb765c5055",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
