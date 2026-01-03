@@ -142,7 +142,7 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n */\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replaceAll(\"\\r\", '').replaceAll(\"\\n\", \"\\n\");\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n}\n\nreturn $input.all();"
+        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n * Throws: Error if no subtitles are found in the content\n */\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replaceAll(\"\\r\", '').replaceAll(\"\\n\", \"\\n\");\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Throw error if no subtitles were parsed\n  if (subtitlesList.length === 0) {\n    throw new Error('No subtitles found in SRT content');\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -151,7 +151,8 @@
         992
       ],
       "id": "ab21a1bd-caa9-439a-be56-33b4ff7bac7e",
-      "name": "Parse SRT"
+      "name": "Parse SRT",
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -1019,6 +1020,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Return ERROR",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1309,7 +1317,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "baba6d11-287f-49f7-9715-45287bf9bd8d",
+  "versionId": "91eb96a5-334c-44cb-8cea-759b31b100ae",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
