@@ -56,7 +56,7 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: Subtitle Array Batch Splitter\n * Purpose: Splits subtitle arrays into smaller batches of N items for processing\n * Input: Items with 'subtitles' array property\n * Output: Multiple items, each containing a batch of subtitles with metadata\n */\n\n\nconst BATCH_SIZE = $input.item.json.BATCH_SIZE || 50;\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const subtitles = item.json.subtitles || [];\n  \n  // If no subtitles, create an empty item\n  if (subtitles.length === 0) {\n    outputItems.push({\n      json: {\n        ...item.json,\n        batch_subtitles: [],\n        batch_number: 0,\n        batch_size: 0,\n        total_subtitles: 0,\n        total_batches: 0\n      },\n      binary: item.binary\n    });\n    continue;\n  }\n  \n  // Calculate total number of batches\n  const totalBatches = Math.ceil(subtitles.length / BATCH_SIZE);\n  \n  // Create batches\n  for (let i = 0; i < subtitles.length; i += BATCH_SIZE) {\n    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;\n    const batch = subtitles.slice(i, i + BATCH_SIZE);\n    \n    // Create new item for each batch\n    const batchItem = {\n      json: {\n        ...item.json, // Copy all original fields\n        batch_subtitles: batch,\n        batch_number: batchNumber,\n        batch_size: batch.length,\n        total_subtitles: subtitles.length,\n        total_batches: totalBatches,\n        batch_start_index: i + 1,\n        batch_end_index: Math.min(i + BATCH_SIZE, subtitles.length)\n      },\n      binary: item.binary\n    };\n    \n    outputItems.push(batchItem);\n  }\n}\nreturn outputItems;"
+        "jsCode": "/**\n * N8N Code Box: Subtitle Array Batch Splitter\n * Purpose: Splits subtitle arrays into smaller batches of N items for processing\n * Input: Items with 'subtitles' array property\n * Output: Multiple items, each containing a batch of subtitles with metadata\n */\nconst BATCH_SIZE = $input.item.json.BATCH_SIZE || 50;\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const subtitles = item.json.subtitles || [];\n  \n  // If no subtitles, create an empty item\n  if (subtitles.length === 0) {\n    const { subtitles: _, ...restJson } = item.json; // Remove subtitles field\n    outputItems.push({\n      json: {\n        ...restJson,\n        batch_subtitles: [],\n        batch_number: 0,\n        batch_size: 0,\n        total_subtitles: 0,\n        total_batches: 0\n      },\n      binary: item.binary\n    });\n    continue;\n  }\n  \n  // Calculate total number of batches\n  const totalBatches = Math.ceil(subtitles.length / BATCH_SIZE);\n  \n  // Extract subtitles from original object\n  const { subtitles: _, ...restJson } = item.json;\n  \n  // Create batches\n  for (let i = 0; i < subtitles.length; i += BATCH_SIZE) {\n    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;\n    const batch = subtitles.slice(i, i + BATCH_SIZE);\n    \n    // Create new item for each batch\n    const batchItem = {\n      json: {\n        ...restJson, // Copy all fields except 'subtitles'\n        batch_subtitles: batch,\n        batch_number: batchNumber,\n        batch_size: batch.length,\n        total_subtitles: subtitles.length,\n        total_batches: totalBatches,\n        batch_start_index: i + 1,\n        batch_end_index: Math.min(i + BATCH_SIZE, subtitles.length)\n      },\n      binary: item.binary\n    };\n    \n    outputItems.push(batchItem);\n  }\n}\n\nreturn outputItems;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -70,7 +70,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Loop Over Items').item.json.batch_subtitles }}",
+        "text": "=--- Translate the following subtitle array ---\n\n{{ JSON.stringify($('Loop Over Items').item.json.batch_subtitles.map(sub => ({ index: sub.index, text: sub.text }))) }}\n\n---",
         "hasOutputParser": true,
         "needsFallback": true,
         "messages": {
@@ -81,7 +81,7 @@
           ]
         },
         "batching": {
-          "batchSize": 5
+          "batchSize": "={{ $('CONFIG').item.json.BATCH_PARALLEL_COUNT }}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -716,6 +716,7 @@
       ],
       "id": "65e1090f-f701-4828-a219-8710c395e857",
       "name": "SRT indexed array format",
+      "onError": "continueRegularOutput",
       "notes": "Sample:\n\n[\n  {\n    \"index\": 1,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  },\n  {\n    \"index\": 2,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  }\n]"
     },
     {
@@ -756,83 +757,6 @@
       ],
       "id": "d5751e41-c45a-439f-b09a-ccaec0354625",
       "name": "Return ERROR"
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "={{ $workflow.id }}",
-          "mode": "id",
-          "cachedResultUrl": "/workflow/=%7B%7B%20$workflow.id%20%7D%7D"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "srt_file": "={{ $json.message.document }}",
-            "target_lang": "={{ $json.output.target_lang }}",
-            "binary_file_name": "data",
-            "source_lang": "={{ $json.output.source_lang || 'auto-infer the source language' }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "srt_file",
-              "displayName": "srt_file",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "object",
-              "removed": false
-            },
-            {
-              "id": "target_lang",
-              "displayName": "target_lang",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "source_lang",
-              "displayName": "source_lang",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "binary_file_name",
-              "displayName": "binary_file_name",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true
-        },
-        "mode": "each",
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        1232,
-        1872
-      ],
-      "id": "3196e6d5-7131-42f0-95b8-49cbe6789dd0",
-      "name": "Execute SRT Translate workflow",
-      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -882,7 +806,8 @@
         992
       ],
       "id": "d1142800-062d-4d3d-a3d7-fba91944a944",
-      "name": "Read file contents"
+      "name": "Read file contents",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -943,6 +868,78 @@
           "name": "OpenRouter - n8n"
         }
       }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}",
+          "cachedResultName": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "srt_file": "={{ $json.message.document }}",
+            "target_lang": "={{ $json.output.target_lang }}",
+            "source_lang": "={{ $json.output.source_lang || 'auto-infer the source language' }}",
+            "binary_file_name": "data"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "srt_file",
+              "displayName": "srt_file",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            },
+            {
+              "id": "target_lang",
+              "displayName": "target_lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "source_lang",
+              "displayName": "source_lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "binary_file_name",
+              "displayName": "binary_file_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1232,
+        1872
+      ],
+      "id": "0d32d752-4b51-4e94-8c74-c8a882e02166",
+      "name": "Execute SRT Translate workflow",
+      "onError": "continueErrorOutput"
     }
   ],
   "pinData": {},
@@ -1229,24 +1226,6 @@
         ]
       ]
     },
-    "Execute SRT Translate workflow": {
-      "main": [
-        [
-          {
-            "node": "Send Translated SRT",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Reply with error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "CONFIG": {
       "main": [
         [
@@ -1306,13 +1285,31 @@
           }
         ]
       ]
+    },
+    "Execute SRT Translate workflow": {
+      "main": [
+        [
+          {
+            "node": "Send Translated SRT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply with error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "604c688f-ad12-4807-a30b-7ceb765c5055",
+  "versionId": "baba6d11-287f-49f7-9715-45287bf9bd8d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
