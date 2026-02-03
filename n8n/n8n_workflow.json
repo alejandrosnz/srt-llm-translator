@@ -142,7 +142,7 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n * Throws: Error if no subtitles are found in the content\n */\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replaceAll(\"\\r\", '').replaceAll(\"\\n\", \"\\n\");\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Throw error if no subtitles were parsed\n  if (subtitlesList.length === 0) {\n    throw new Error('No subtitles found in SRT content');\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n}\nreturn $input.all();"
+        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n * Throws: Error if no subtitles are found in the content\n */\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replaceAll(\"\\r\", '').replaceAll(\"\\n\", \"\\n\");\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Throw error if no subtitles were parsed\n  if (subtitlesList.length === 0) {\n    throw new Error('No subtitles found in SRT content');\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n  \n  // Remove file_content to free up memory\n  delete item.json.file_content;\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -185,7 +185,7 @@
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: SRT File Generator from Merged Subtitles\n * Purpose: Converts merged subtitle data back to SRT format and creates binary file\n * Input: Items with 'merged_subtitles' array containing subtitle objects\n * Output: Items with SRT content as text and binary file, plus metadata (lines, size)\n */\n\n// Generate SRT file from merged subtitles\nfor (const item of $input.all()) {\n  const mergedSubtitles = item.json.merged_subtitles || [];\n  \n  if (mergedSubtitles.length === 0) {\n    item.json.srt_content = '';\n    item.json.srt_lines = 0;\n    continue;\n  }\n  \n  // Sort by index to ensure correct order\n  const sortedSubtitles = mergedSubtitles.sort((a, b) => a.index - b.index);\n  \n  // Generate SRT content\n  const srtBlocks = [];\n  \n  for (const subtitle of sortedSubtitles) {\n    // SRT format:\n    // Subtitle number\n    // start_timestamp --> end_timestamp\n    // Subtitle text\n    // Empty line\n    \n    const srtBlock = `${subtitle.index}\n${subtitle.start} --> ${subtitle.end}\n${subtitle.text}`;\n    \n    srtBlocks.push(srtBlock);\n  }\n  \n  // Join blocks with double line break\n  const srtContent = srtBlocks.join('\\n\\n');\n  \n  // Add SRT content to item\n  item.json.srt_content = srtContent;\n  item.json.srt_lines = srtBlocks.length;\n  item.json.srt_size = srtContent.length;\n  \n  // Create binary SRT file\n  const originalFileName = item.json.srt_file.file_name || 'subtitles.srt';\n  const targetLang = item.json.target_lang || 'translated';\n  \n  // Generate new filename: originalname.TARGET_LANG.srt\n  const fileNameWithoutExt = originalFileName.replace(/\\.srt$/i, '');\n  const newFileName = `${fileNameWithoutExt}.${targetLang}.srt`;\n  \n  // Convert to Base64 for binary storage\n  const buffer = Buffer.from(srtContent, 'utf-8');\n  const base64Content = buffer.toString('base64');\n  \n  // Add as binary file\n  item.binary = item.binary || {};\n  item.binary['translated_srt'] = {\n    data: base64Content,\n    fileName: newFileName,\n    mimeType: 'text/plain'\n  };\n}\nreturn $input.all();"
+        "jsCode": "/**\n * N8N Code Box: SRT File Generator from Merged Subtitles\n * Purpose: Converts merged subtitle data back to SRT format and creates binary file\n * Input: Items with 'merged_subtitles' array containing subtitle objects\n * Output: Items with SRT content as text and binary file, plus metadata (lines, size)\n */\n\n// Generate SRT file from merged subtitles\nfor (const item of $input.all()) {\n  const mergedSubtitles = item.json.merged_subtitles || [];\n  \n  if (mergedSubtitles.length === 0) {\n    item.json.srt_content = '';\n    item.json.srt_lines = 0;\n    // Remove merged_subtitles to free up memory\n    delete item.json.merged_subtitles;\n    continue;\n  }\n  \n  // Sort by index to ensure correct order\n  const sortedSubtitles = mergedSubtitles.sort((a, b) => a.index - b.index);\n  \n  // Generate SRT content\n  const srtBlocks = [];\n  \n  for (const subtitle of sortedSubtitles) {\n    // SRT format:\n    // Subtitle number\n    // start_timestamp --> end_timestamp\n    // Subtitle text\n    // Empty line\n    \n    const srtBlock = `${subtitle.index}\n${subtitle.start} --> ${subtitle.end}\n${subtitle.text}`;\n    \n    srtBlocks.push(srtBlock);\n  }\n  \n  // Join blocks with double line break\n  const srtContent = srtBlocks.join('\\n\\n');\n  \n  // Add SRT content to item\n  // item.json.srt_content = srtContent;\n  item.json.srt_lines = srtBlocks.length;\n  item.json.srt_size = srtContent.length;\n  \n  // Create binary SRT file\n  const originalFileName = item.json.srt_file.file_name || 'subtitles.srt';\n  const targetLang = item.json.target_lang || 'translated';\n  \n  // Generate new filename: originalname.TARGET_LANG.srt\n  const fileNameWithoutExt = originalFileName.replace(/\\.srt$/i, '');\n  const newFileName = `${fileNameWithoutExt}.${targetLang}.srt`;\n  \n  // Convert to Base64 for binary storage\n  const buffer = Buffer.from(srtContent, 'utf-8');\n  const base64Content = buffer.toString('base64');\n  \n  // Add as binary file\n  item.binary = item.binary || {};\n  item.binary['translated_srt'] = {\n    data: base64Content,\n    fileName: newFileName,\n    mimeType: 'text/plain'\n  };\n  \n  // Remove merged_subtitles to free up memory\n  delete item.json.merged_subtitles;\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -358,6 +358,15 @@
               "operator": {
                 "type": "number",
                 "operation": "gt"
+              }
+            },
+            {
+              "id": "63467ef4-24f3-4129-a5ad-cf08214527cd",
+              "leftValue": "={{ $json.srt_lines }}",
+              "rightValue": "={{ $json.total_subtitles }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
               }
             }
           ],
@@ -772,7 +781,7 @@
             {
               "id": "6b1ce68c-b08d-4e46-97eb-314c2be5ab39",
               "name": "BATCH_PARALLEL_COUNT",
-              "value": 5,
+              "value": 10,
               "type": "number"
             }
           ]
@@ -813,7 +822,9 @@
     {
       "parameters": {
         "model": "openai/gpt-4.1-nano",
-        "options": {}
+        "options": {
+          "responseFormat": "json_object"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
@@ -833,7 +844,9 @@
     {
       "parameters": {
         "model": "google/gemini-2.5-flash-lite",
-        "options": {}
+        "options": {
+          "responseFormat": "json_object"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
@@ -853,7 +866,9 @@
     {
       "parameters": {
         "model": "google/gemini-2.5-flash-lite",
-        "options": {}
+        "options": {
+          "responseFormat": "json_object"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
@@ -1317,7 +1332,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "91eb96a5-334c-44cb-8cea-759b31b100ae",
+  "versionId": "5c708f3e-3b71-4d1f-9600-4f0ae3fa995e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
