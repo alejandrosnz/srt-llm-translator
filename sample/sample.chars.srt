@@ -1,0 +1,39 @@
+1
+00:00:01,000 --> 00:00:03,000
+She said "Hello there" and smiled.
+
+2
+00:00:03,500 --> 00:00:05,500
+"Nice"? That's all you've got?
+
+3
+00:00:06,000 --> 00:00:08,000
+It's a 'special' occasion — don't ruin it.
+
+4
+00:00:08,500 --> 00:00:10,500
+He whispered… "I know what you did."
+
+5
+00:00:11,000 --> 00:00:13,000
+The price was $50–$100, maybe more.
+
+6
+00:00:13,500 --> 00:00:15,500
+„Guten Morgen", sagte er leise.
+
+7
+00:00:16,000 --> 00:00:18,000
+❝This is quoted text❞, she replied.
+
+8
+00:00:18,500 --> 00:00:20,500
+Don't you ❛dare❜ say that again!
+
+9
+00:00:21,000 --> 00:00:23,000
+It was a long—very long—night indeed.
+
+10
+00:00:23,500 --> 00:00:26,000
+"Wait…" he said. ‟Are you sure about this?"

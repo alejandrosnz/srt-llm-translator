@@ -31,97 +31,53 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.2,
       "position": [
-        208,
-        1296
+        -6224,
+        3248
       ],
-      "id": "6675de19-a0f3-4012-8980-f0a6b8a70f66",
+      "id": "bb55a87c-b8d7-43f0-aa1e-23eca9a371a1",
       "name": "On form submission",
-      "webhookId": "b7c12d8b-125f-4580-98f1-a39d266e9b51"
+      "webhookId": "85127898-069f-43d8-af51-30ab8dd391a4"
     },
     {
       "parameters": {
-        "batchSize": "={{ $('CONFIG').item.json.BATCH_PARALLEL_COUNT }}",
-        "options": {
-          "reset": false
-        }
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1328,
-        1056
-      ],
-      "id": "2e5bbd84-bb2b-499e-ad05-52c8d1f7471d",
-      "name": "Loop Over Items"
-    },
-    {
-      "parameters": {
-        "jsCode": "/**\n * N8N Code Box: Subtitle Array Batch Splitter\n * Purpose: Splits subtitle arrays into smaller batches of N items for processing\n * Input: Items with 'subtitles' array property\n * Output: Multiple items, each containing a batch of subtitles with metadata\n */\nconst BATCH_SIZE = $input.item.json.BATCH_SIZE || 50;\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const subtitles = item.json.subtitles || [];\n  \n  // If no subtitles, create an empty item\n  if (subtitles.length === 0) {\n    const { subtitles: _, ...restJson } = item.json; // Remove subtitles field\n    outputItems.push({\n      json: {\n        ...restJson,\n        batch_subtitles: [],\n        batch_number: 0,\n        batch_size: 0,\n        total_subtitles: 0,\n        total_batches: 0\n      },\n      binary: item.binary\n    });\n    continue;\n  }\n  \n  // Calculate total number of batches\n  const totalBatches = Math.ceil(subtitles.length / BATCH_SIZE);\n  \n  // Extract subtitles from original object\n  const { subtitles: _, ...restJson } = item.json;\n  \n  // Create batches\n  for (let i = 0; i < subtitles.length; i += BATCH_SIZE) {\n    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;\n    const batch = subtitles.slice(i, i + BATCH_SIZE);\n    \n    // Create new item for each batch\n    const batchItem = {\n      json: {\n        ...restJson, // Copy all fields except 'subtitles'\n        batch_subtitles: batch,\n        batch_number: batchNumber,\n        batch_size: batch.length,\n        total_subtitles: subtitles.length,\n        total_batches: totalBatches,\n        batch_start_index: i + 1,\n        batch_end_index: Math.min(i + BATCH_SIZE, subtitles.length)\n      },\n      binary: item.binary\n    };\n    \n    outputItems.push(batchItem);\n  }\n}\n\nreturn outputItems;"
+        "jsCode": "/**\n * N8N Code Box: Subtitle Array Batch Splitter\n * Purpose: Splits subtitle arrays into smaller batches of N items for processing\n * Input: Items with 'subtitles' array property\n * Output: Multiple items, each containing a batch of subtitles with metadata\n */\nconst BATCH_SIZE = $input.item.json.BATCH_SIZE || 50;\nconst outputItems = [];\n\nfor (const item of $input.all()) {\n  const subtitles = item.json.subtitles || [];\n\n  if (subtitles.length === 0) {\n    const { subtitles: _, ...restJson } = item.json;\n    outputItems.push({\n      json: {\n        ...restJson,\n        batch_subtitles: [],\n        batch_number: 0,\n        batch_size: 0,\n        total_subtitles: 0,\n        total_batches: 0\n      }\n    });\n    continue;\n  }\n\n  const totalBatches = Math.ceil(subtitles.length / BATCH_SIZE);\n  const { subtitles: _, ...restJson } = item.json;\n\n  for (let i = 0; i < subtitles.length; i += BATCH_SIZE) {\n    const batchNumber = Math.floor(i / BATCH_SIZE) + 1;\n    const batch = subtitles.slice(i, i + BATCH_SIZE);\n\n    outputItems.push({\n      json: {\n        ...restJson,\n        batch_subtitles: batch,\n        batch_number: batchNumber,\n        batch_size: batch.length,\n        total_subtitles: subtitles.length,\n        total_batches: totalBatches,\n        batch_start_index: i + 1,\n        batch_end_index: Math.min(i + BATCH_SIZE, subtitles.length)\n      }\n    });\n  }\n}\n\nreturn outputItems;\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1104,
-        1056
+        -5344,
+        3008
       ],
-      "id": "529089e6-83b0-40c1-8aca-653ce5a6dc0e",
+      "id": "6d6bc8cf-2a59-4cdb-a331-675eab6a4917",
       "name": "Split in batches"
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "=--- Translate the following subtitle array ---\n\n{{ JSON.stringify($('Loop Over Items').item.json.batch_subtitles.map(sub => ({ index: sub.index, text: sub.text }))) }}\n\n---",
-        "hasOutputParser": true,
-        "needsFallback": true,
-        "messages": {
-          "messageValues": [
-            {
-              "message": "=# Professional Subtitle Translation System\n\n## Role and Objective\nYou are an expert subtitle translator specializing in audiovisual content. Your primary task is to translate subtitle entries from the source language '{{ $json.source_lang || 'english' }}' to the target '{{ $json.target_lang }}' while maintaining narrative consistency and resolving linguistic ambiguities through contextual analysis.\n\n## Input Format\nYou will receive a JSON array containing subtitle entries with:\n- `index`: Sequential identifier for each subtitle line\n- `text`: The subtitle text to be translated\n\n## Core Translation Instructions\n\n### 1. Contextual Translation Strategy\n- **Use previous lines as context**: Before translating each line, analyze the preceding subtitle entries to understand:\n  - Character gender and relationships\n  - Narrative context and emotional tone\n  - Technical terminology or proper nouns\n  - Conversational flow and speaker identity\n- **Resolve ambiguities**: When the source language contains ambiguous elements (gender, formality level, implied subjects), use the established context from previous lines to make consistent choices\n\n### 2. Language Detection and Handling\n- If a line is already in {{ $json.target_lang }}, return it unchanged\n  - If a line is not in the defined source language ({{ $json.source_lang || 'english' }}), but you can infer the language, translate it to {{ $json.target_lang }}.\n- If text is empty, whitespace-only, or contains only symbols/numbers, preserve as-is\n\n### 3. Translation Quality Standards\n- **Preserve**: Tone, meaning, style, punctuation, and capitalization\n- **Maintain**: Subtitle timing constraints (keep similar length when possible)\n- **Ensure**: Natural flow in the target language\n- **Consider**: Cultural adaptation where necessary for comprehension\n\n## Output Requirements\n\n### Format\nReturn ONLY a valid JSON object with the output array with this exact structure:\n```json\n{\n  \"output\": [\n    {\n      \"index\": int,\n      \"text\": \"string\"\n    },\n    ...\n  ]\n}\n```\n\n### Constraints\n- Do NOT add, remove, or reorder entries\n- Do NOT include explanations, comments, or text outside the JSON\n- Do NOT ask for clarification or additional context\n- Maintain the exact same number of entries as the input\n\n## Examples\n\n### Input:\n```json\n{\n  \"output\": [\n    {\"index\": 47, \"text\": \"Maria walked into the room.\"},\n    {\"index\": 48, \"text\": \"She looked tired.\"},\n    {\"index\": 49, \"text\": \"Good morning, doctor.\"}\n  ]\n}\n```\n\n### Output (English to Spanish):\n```json\n{\n  \"output\": [\n    {\"index\": 47, \"text\": \"María entró en la habitación.\"},\n    {\"index\": 48, \"text\": \"Se veía cansada.\"},\n    {\"index\": 49, \"text\": \"Buenos días, doctora.\"}\n  ]\n}\n```\n\n*Note: In line 49, \"doctora\" (feminine) is used because the context from previous lines established that Maria is the doctor being addressed.*\n\n## Processing Instructions\n1. Read all entries in the batch first\n2. Analyze the contextual flow and character information\n3. Translate each line considering the established context\n4. Ensure consistency across all translations in the batch\n5. Output the same items count as the input\n\nBegin translation:"
-            }
-          ]
-        },
-        "batching": {
-          "batchSize": "={{ $('CONFIG').item.json.BATCH_PARALLEL_COUNT }}"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.7,
-      "position": [
-        1520,
-        1168
-      ],
-      "id": "fa324ca2-d14f-4e2d-953e-fb34f213235c",
-      "name": "Translate",
-      "retryOnFail": true,
-      "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "jsCode": "/**\n * N8N Code Box: Translation Batch Merger and SRT Data Combiner\n * Purpose: Merges all translation batches back together and combines with original SRT parse data\n * Input: Items with translation 'output' arrays and access to 'Parse SRT' node data\n * Output: Single item with all translations sorted by index and combined with SRT metadata\n */\n\nconst allTranslations = [];\n// Collect all translations from all items\nfor (const item of $input.all()) {\n  const output = item.json.output || [];\n  \n  for (const translation of output) {\n    allTranslations.push(translation);\n  }\n}\n// Sort by index\nallTranslations.sort((a, b) => a.index - b.index);\n// Get data from Parse SRT node\nconst parseSRTData = $('Parse SRT').all();\n// Create output item combining both data sets\nconst outputItem = {\n  json: {\n    // Translation data\n    subtitles_translated: allTranslations,\n    total_translations: allTranslations.length,\n    \n    // Specific Parse SRT data\n    parse_srt_data: parseSRTData.map(item => ({\n      srt_file: item.json.srt_file,\n      filename: item.json.filename,\n      submittedAt: item.json.submittedAt\n    })),\n    \n    // If there's only one item in Parse SRT, also include its fields directly\n    ...(parseSRTData.length === 1 ? parseSRTData[0].json : {})\n  }\n};\nreturn [outputItem];"
+        "jsCode": "/**\n * N8N Code Box: Translation Batch Merger and SRT Data Combiner\n * Purpose: Collects all translated batches from input, deduplicates by index,\n *          and combines in a single list\n * Input: All translated batch items\n * Output: Single item with all translations sorted by index\n */\nconst allTranslations = [];\n\nfor (const item of $input.all()) {\n  const output = item.json.output || [];\n  for (const t of output) {\n    allTranslations.push(t);\n  }\n}\n\n// Deduplicate by index, last write wins (handles retries), then sort ascending\nconst map = {};\nfor (const t of allTranslations) map[t.index] = t;\nconst sorted = Object.values(map).sort((a, b) => a.index - b.index);\n\nreturn [{\n  json: {\n    subtitles_translated: sorted,\n    total_translations: sorted.length\n  }\n}];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1872,
-        1008
+        -4832,
+        2992
       ],
-      "id": "5cd06f32-11cd-49a2-98dd-20afec9f6b26",
+      "id": "ea1c7c47-fddc-423d-8580-ed7138f0cfb3",
       "name": "Join batches"
     },
     {
       "parameters": {
         "content": "## Translate SRT\nTranslate the SRT lines in batches",
-        "height": 608,
-        "width": 1136,
+        "height": 496,
+        "width": 868,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1056,
-        944
+        -5376,
+        2880
       ],
       "typeVersion": 1,
-      "id": "d5af9b78-bd35-4059-a196-4741fd1dd38a",
+      "id": "e02a2753-ad7d-412a-9db9-a50a2fec103a",
       "name": "Sticky Note"
     },
     {
@@ -133,24 +89,24 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        608,
-        912
+        -5824,
+        2864
       ],
       "typeVersion": 1,
-      "id": "474703af-3916-40af-a612-b8cdd95cfa8f",
+      "id": "fee91d46-95f7-4117-8125-ae2463476f47",
       "name": "Sticky Note1"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n * Throws: Error if no subtitles are found in the content\n */\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replaceAll(\"\\r\", '').replaceAll(\"\\n\", \"\\n\");\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split('\\n\\n');\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines)\n      const text = lines.slice(2).join(' ');\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Throw error if no subtitles were parsed\n  if (subtitlesList.length === 0) {\n    throw new Error('No subtitles found in SRT content');\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n  \n  // Remove file_content to free up memory\n  delete item.json.file_content;\n}\nreturn $input.all();"
+        "jsCode": "/**\n * N8N Code Box: SRT Subtitle Parser to JSON\n * Purpose: Parses SRT subtitle content and converts it to structured JSON format\n * Input: Items with 'file_content' property containing SRT formatted text\n * Output: Items with parsed subtitles array and count added to JSON\n * Throws: Error if no subtitles are found in the content\n */\n\n/**\n * Sanitizes subtitle text by replacing problematic characters\n * that can break JSON parsing or downstream processing\n */\nfunction sanitizeText(text) {\n  return text\n    // Curly/smart quotes → straight quotes\n    .replace(/[\\u201C\\u201D\\u201E\\u201F\\u275D\\u275E]/g, '\"')  // \" \" „ ‟ ❝ ❞ → \"\n    .replace(/[\\u2018\\u2019\\u201A\\u201B\\u275B\\u275C]/g, \"'\")  // ' ' ‚ ‛ ❛ ❜ → '\n    // Dashes: em/en dash → hyphen\n    .replace(/[\\u2013\\u2014]/g, '-')\n    // Ellipsis character → three dots\n    .replace(/\\u2026/g, '...')\n    // Non-breaking space → regular space\n    .replace(/\\u00A0/g, ' ')\n    // Zero-width characters\n    .replace(/[\\u200B\\u200C\\u200D\\uFEFF]/g, '')\n    // Trim stray whitespace\n    .trim();\n}\n\nfor (const item of $input.all()) {\n  // Get SRT content and clean it\n  let srtContent = item.json.file_content || '';\n  \n  // Remove BOM if present\n  srtContent = srtContent.replace(/^\\uFEFF/, '');\n  \n  // Remove carriage returns and normalize line breaks\n  srtContent = srtContent.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');\n  \n  const subtitlesList = [];\n  \n  if (srtContent) {\n    // Split into blocks by double line break\n    const blocks = srtContent.split(/\\n\\s*\\n+/);\n    \n    for (const block of blocks) {\n      if (!block.trim()) continue;\n      \n      // Split into lines and clean\n      const lines = block.trim().split('\\n').map(line => line.trim()).filter(line => line);\n      \n      // Verify we have at least 3 lines (index, timestamp, text)\n      if (lines.length < 3) continue;\n      \n      // Extract index\n      const index = parseInt(lines[0]);\n      if (isNaN(index)) continue;\n      \n      // Extract timestamps\n      const timestampLine = lines[1];\n      if (!timestampLine.includes('-->')) continue;\n      \n      const timeParts = timestampLine.split('-->');\n      if (timeParts.length !== 2) continue;\n      \n      const startTime = timeParts[0].trim();\n      const endTime = timeParts[1].trim();\n      \n      // Extract text (can be multiple lines) and sanitize\n      const text = sanitizeText(lines.slice(2).join(' '));\n      \n      // Create subtitle object\n      const subtitle = {\n        index: index,\n        start: startTime,\n        end: endTime,\n        text: text\n      };\n      \n      subtitlesList.push(subtitle);\n    }\n  }\n  \n  // Throw error if no subtitles were parsed\n  if (subtitlesList.length === 0) {\n    throw new Error('No subtitles found in SRT content');\n  }\n  \n  // Add parsed data to item's JSON\n  item.json.subtitles = subtitlesList;\n  item.json.subtitles_count = subtitlesList.length;\n  \n  // Remove file_content to free up memory\n  delete item.json.file_content;\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        864,
-        992
+        -5568,
+        2944
       ],
-      "id": "ab21a1bd-caa9-439a-be56-33b4ff7bac7e",
+      "id": "a7e7a690-6643-4bfa-a336-524b03892b06",
       "name": "Parse SRT",
       "onError": "continueErrorOutput"
     },
@@ -163,24 +119,24 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        2240,
-        880
+        -4464,
+        2848
       ],
       "typeVersion": 1,
-      "id": "0171c8bc-0212-4140-b013-b8c699ba1013",
+      "id": "d2215c6f-16c4-4630-ad7e-1ccae494b91d",
       "name": "Sticky Note2"
     },
     {
       "parameters": {
-        "jsCode": "/**\n * N8N Code Box: Original and Translated Subtitle Merger\n * Purpose: Merges original subtitles with translations based on index, preserving timing data\n * Input: Items with nested data containing 'subtitles' and 'subtitles_translated' arrays\n * Output: Items with merged subtitles using original timing and translated text\n */\n\nconst inputData = $input.all();\nconst results = [];\nfor (const item of inputData) {\n  const data = item.json.data?.[0] || item.json; // Fallback to root if nested structure missing\n  \n  // Extract subtitle arrays\n  const originalSubtitles = data.subtitles || [];\n  const translatedSubtitles = data.subtitles_translated || [];\n  \n  // Create translation map by index for fast lookup\n  const translationsMap = {};\n  translatedSubtitles.forEach(translation => {\n    translationsMap[translation.index] = translation.text;\n  });\n  \n  // Merge subtitles: use original timing + translated text\n  const mergedSubtitles = originalSubtitles.map(subtitle => {\n    const translatedText = translationsMap[subtitle.index];\n    \n    return {\n      index: subtitle.index,\n      start: subtitle.start,\n      end: subtitle.end,\n      text: translatedText || subtitle.text // Use translation if exists, otherwise original\n    };\n  });\n  \n  // Create the result\n  results.push({\n    json: {\n      merged_subtitles: mergedSubtitles,\n      target_lang: data.target_lang,\n      srt_file: data.srt_file,\n      total_subtitles: mergedSubtitles.length\n    }\n  });\n}\nreturn results;"
+        "jsCode": "/**\n * N8N Code Box: Original and Translated Subtitle Merger\n * Purpose: Merges original subtitles with translations based on index, preserving timing data\n * Input: Single item with 'subtitles' (original) and 'subtitles_translated' arrays\n * Output: Items with merged subtitles using original timing and translated text\n */\n\nconst results = [];\n\nfor (const item of $input.all()) {\n  const originalSubtitles = item.json.subtitles || [];\n  const translatedSubtitles = item.json.subtitles_translated || [];\n\n  const translationsMap = {};\n  translatedSubtitles.forEach(t => {\n    translationsMap[t.index] = t.text;\n  });\n\n  const mergedSubtitles = originalSubtitles.map(subtitle => ({\n    index: subtitle.index,\n    start: subtitle.start,\n    end: subtitle.end,\n    text: translationsMap[subtitle.index] || subtitle.text\n  }));\n\n  results.push({\n    json: {\n      merged_subtitles: mergedSubtitles,\n      target_lang: item.json.target_lang,\n      srt_file: item.json.srt_file,\n      total_subtitles: mergedSubtitles.length\n    }\n  });\n}\n\nreturn results;\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2288,
-        960
+        -4416,
+        2928
       ],
-      "id": "0eee1a1b-9b9f-4382-a9d0-0d9ea8ec8bf5",
+      "id": "62730897-10c4-4530-a6c5-32c994210882",
       "name": "Merge Original and Translated Subtitles"
     },
     {
@@ -190,10 +146,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2512,
-        960
+        -4192,
+        2928
       ],
-      "id": "ece3040f-e002-428e-9552-c6e7bb98458f",
+      "id": "b418dd80-8342-41a7-a136-d553feaed2f8",
       "name": "Generate SRT file"
     },
     {
@@ -219,10 +175,10 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        208,
-        992
+        -6224,
+        2944
       ],
-      "id": "443b1c29-7756-4242-87cf-954f69f4135d",
+      "id": "30a5c581-8caf-4a12-8fea-b82a4eab6389",
       "name": "When Executed by Another Workflow"
     },
     {
@@ -295,10 +251,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        432,
-        1296
+        -6000,
+        3248
       ],
-      "id": "ab6d00df-b98c-43e5-b87b-0bc55f9c339d",
+      "id": "90419f6b-f9fe-43f8-ba0b-0a222ee5d8de",
       "name": "Execute SRT Translate",
       "onError": "continueErrorOutput"
     },
@@ -317,10 +273,10 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 1,
       "position": [
-        656,
-        1200
+        -5776,
+        3152
       ],
-      "id": "01f85c7e-9573-4130-96bc-9c19bce7f6f4",
+      "id": "958e365a-2ef5-4856-a39c-64e5c511c50c",
       "name": "Form OK",
       "webhookId": "e0d24235-f334-4ace-bbfd-02c60dbca53e"
     },
@@ -334,10 +290,10 @@
       "type": "n8n-nodes-base.form",
       "typeVersion": 1,
       "position": [
-        656,
-        1392
+        -5776,
+        3344
       ],
-      "id": "616eee9a-fd7a-4e24-940d-b6197798bae2",
+      "id": "b50c953b-3950-4eb5-aaee-ff0beab8c067",
       "name": "Form ERROR",
       "webhookId": "4ec6cedc-b0e8-4cd7-9625-aafb357c3494"
     },
@@ -377,10 +333,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2288,
-        1280
+        -4416,
+        3248
       ],
-      "id": "064bddf5-c266-4068-bfb7-9a6d71d0004c",
+      "id": "d959b077-4d57-4307-965a-cb8ea81bade3",
       "name": "Translation OK?"
     },
     {
@@ -392,11 +348,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        2256,
-        1168
+        -4448,
+        3136
       ],
       "typeVersion": 1,
-      "id": "502995c7-6995-4c83-989c-7f81f26c6b59",
+      "id": "1b385e4f-1bde-4fab-86ba-316af82d8d7e",
       "name": "Sticky Note3"
     },
     {
@@ -412,10 +368,10 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        208,
-        1744
+        -6224,
+        3696
       ],
-      "id": "b752b0ae-e787-45f0-97df-f0ca36456e0f",
+      "id": "d6c61452-b415-48d9-b922-b40ca278b24c",
       "name": "Telegram Trigger",
       "webhookId": "e179d651-76f9-46c7-8eb9-8a0f52d9b76a",
       "credentials": {
@@ -437,37 +393,11 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1456,
-        1968
+        -4752,
+        3824
       ],
-      "id": "cc214540-a274-421c-a820-1665b7f5d7c1",
+      "id": "a45c9fd5-ff12-4186-9cd8-4b0516a2f1ce",
       "name": "Reply with error",
-      "webhookId": "7f067c04-482d-4d6b-af45-1ca882a24565",
-      "credentials": {
-        "telegramApi": {
-          "id": "fqTSuko8X6YFgAqS",
-          "name": "Telegram - SRT Translator BOT"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $json.message.chat.id }}",
-        "text": "=Hi 👋 Please send me:  \n- Your .SRT file  \n- The target language (e.g. English, French...) in the file description ",
-        "additionalFields": {
-          "appendAttribution": false,
-          "disable_notification": true,
-          "reply_to_message_id": "={{ $json.message.message_id }}"
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        720,
-        1584
-      ],
-      "id": "a9f14089-31a0-426d-8ac5-e9d66458bd40",
-      "name": "Reply instructions",
       "webhookId": "7f067c04-482d-4d6b-af45-1ca882a24565",
       "credentials": {
         "telegramApi": {
@@ -563,10 +493,10 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        432,
-        1712
+        -6000,
+        3664
       ],
-      "id": "510ec8de-e5aa-473a-9de6-90add27a7114",
+      "id": "8b74a7a0-3cb2-4f99-8374-486f5d38ed31",
       "name": "Check Message File"
     },
     {
@@ -583,10 +513,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1456,
-        1776
+        -4976,
+        3712
       ],
-      "id": "00257223-b4e0-4c01-a582-8f7e9ca5ae3e",
+      "id": "cc176474-6e22-4024-8470-ee77afa61406",
       "name": "Send Translated SRT",
       "webhookId": "f34c0480-bf31-4980-93ad-ea75cd911399",
       "credentials": {
@@ -594,7 +524,8 @@
           "id": "fqTSuko8X6YFgAqS",
           "name": "Telegram - SRT Translator BOT"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -613,33 +544,18 @@
           ]
         },
         "options": {
-          "systemPromptTemplate": "You will receive a caption text from a Telegram file.  \nYour task is to extract:  \n- target_lang → the language the user wants to translate the subtitles into (mandatory).  \n- source_lang → the language of the original subtitles, if explicitly mentioned (optional). If not found, leave it empty.  \n\nThe caption may be written in different ways, for example:  \n- \"ES\", \"Spanish\", \"traduce a español\", \"translate to ES\" → target_lang = Spanish  \n- \"from English to Spanish\", \"traduce de inglés a español\" → source_lang = English, target_lang = Spanish  \n"
+          "systemPromptTemplate": "=# Caption Language Extractor\n\n## Role\nYou are a language extraction parser. Extract translation intent from a Telegram caption and return a JSON object.\n\n## Extraction Rules\n- **target_lang** (mandatory): language to translate INTO. Normalize to full English name. If not found, return `\"unknown\"`.\n- **source_lang** (optional): language of the original subtitles, only if explicitly mentioned. If absent, return `\"\"`.\n\n## Output Format\nReturn ONLY valid JSON. No text outside it.\n```json\n{\"target_lang\": \"string\", \"source_lang\": \"string\"}\n```\n\n## Examples\n| Caption | target_lang | source_lang |\n|---|---|---|\n| `ES` | `\"Spanish\"` | `\"\"` |\n| `traduce a español` | `\"Spanish\"` | `\"\"` |\n| `from English to Spanish` | `\"Spanish\"` | `\"English\"` |\n| `traduce de inglés a español` | `\"Spanish\"` | `\"English\"` |"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        656,
-        1744
+        -5776,
+        3696
       ],
-      "id": "447a4296-6dab-46ea-ad1a-904327fe116a",
+      "id": "319a11e9-abee-4e02-8ffc-d4cda36c8a79",
       "name": "Extract Source & Target Lang",
       "alwaysOutputData": false
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1008,
-        1872
-      ],
-      "id": "d3165d7b-11dd-491f-8a7e-2836df14773e",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -654,10 +570,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1008,
-        1680
+        -5424,
+        3632
       ],
-      "id": "075ae517-0937-495c-8df5-a98c950531c7",
+      "id": "32621e68-9325-4597-b5bc-042a0c4791f1",
       "name": "Send 'In Progress' message",
       "webhookId": "7f067c04-482d-4d6b-af45-1ca882a24565",
       "credentials": {
@@ -669,90 +585,29 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "30fe981c-717a-450f-952a-282239d105bc",
-              "leftValue": "={{ $json.output.length }}",
-              "rightValue": "={{ $('Loop Over Items').item.json.batch_subtitles.length }}",
-              "operator": {
-                "type": "number",
-                "operation": "equals"
-              }
-            },
-            {
-              "id": "995da35b-ceb4-4c5e-9354-0f94b6b69d9f",
-              "leftValue": "={{ JSON.stringify($json.output.map(item => item.index)) === JSON.stringify($('Loop Over Items').item.json.batch_subtitles.map(item => item.index)) }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1872,
-        1168
-      ],
-      "id": "7889b8e3-0a79-418b-abe0-d7c1fff31169",
-      "name": "Translation kept index?"
-    },
-    {
-      "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"json_schema\": {\n    \"name\": \"translation_batch\",\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"output\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"index\": {\n                \"type\": \"integer\"\n              },\n              \"text\": {\n                \"type\": \"string\"\n              }\n            },\n            \"required\": [\n              \"index\",\n              \"text\"\n            ]\n          }\n        }\n      },\n      \"required\": [\n        \"output\"\n      ]\n    }\n  }\n}",
-        "autoFix": true,
-        "customizeRetryPrompt": true,
-        "prompt": "# System Prompt: JSON Response Repair Agent\n\nYou are a specialized agent whose sole purpose is to repair malformed LLM responses and convert them into a valid JSON format.\n\nInstructions:\n--------------\n{instructions}\n--------------\nCompletion:\n--------------\n{completion}\n--------------\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:\n\n## Your Task\nTransform the malformed completion into the following exact JSON structure:\n\n### Required Output Format:\n```json\n{{\n  \"output\": [\n    {{\"index\": 47, \"text\": \"María entró en la habitación.\"}},\n    {{\"index\": 48, \"text\": \"Se veía cansada.\"}},\n    {{\"index\": 49, \"text\": \"Buenos días, doctora.\"}}\n  ]\n}}\n```\n\n## Rules:\n1. **Always return valid JSON** with the exact structure shown above\n2. **Extract all index-text pairs** from the malformed response, even if they're embedded in markdown, prose, or other formatting\n3. **Preserve the original text content** exactly as it appears (don't translate, modify, or \"fix\" the text itself)\n4. **Maintain index order** - sort items by index in ascending order\n5. **If the original response was empty or contained no valid data**, return:\n```json\n{{\n  \"output\": []\n}}\n```\n6. **Remove any markdown formatting** (```json, backticks, code blocks, etc.)\n7. **Handle edge cases**:\n   - Missing indexes: skip those items or try to infer from context\n   - Duplicate indexes: keep the first occurrence\n   - Non-integer indexes: attempt to convert to integer, or skip if impossible\n\n## Examples of Input You Might Receive:\n\n**Example 1 - Markdown wrapped:**\n```\nHere are your translations:\n```json\n{{\"output\": [{{\"index\": 1, \"text\": \"Hola\"}}]}}\n```\n```\n\n**Example 2 - Prose format:**\n```\nSure! Here are the results:\n- Index 1: \"Hola mundo\"\n- Index 2: \"Adiós\"\n```\n\n**Example 3 - Partial JSON:**\n```\n{{\"output\": [{{\"index\": 5, \"text\": \"Test\"\n```\n\n**Example 4 - Empty response:**\n```\nI apologize, but I couldn't process that request.\n```\n\n## Your Response:\nReturn ONLY the valid JSON object. No explanations, no markdown formatting, no additional text.\n"
+        "inputSchema": "{\n  \"json_schema\": {\n    \"name\": \"translation_batch\",\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"output\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n              \"index\": {\n                \"type\": \"integer\"\n              },\n              \"text\": {\n                \"type\": \"string\"\n              }\n            },\n            \"required\": [\n              \"index\",\n              \"text\"\n            ]\n          }\n        }\n      },\n      \"required\": [\n        \"output\"\n      ]\n    }\n  }\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1664,
-        1392
+        -4960,
+        3200
       ],
-      "id": "65e1090f-f701-4828-a219-8710c395e857",
+      "id": "7212ca16-59ae-4e8e-9517-bfc6102f4e43",
       "name": "SRT indexed array format",
       "onError": "continueRegularOutput",
       "notes": "Sample:\n\n[\n  {\n    \"index\": 1,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  },\n  {\n    \"index\": 2,\n    \"text\": \"Este es un archivo SRT de ejemplo.\"\n  }\n]"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2064,
-        960
-      ],
-      "id": "1cbe29eb-3f4c-4928-927b-83284fa2a022",
-      "name": "Loop output"
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        2512,
-        1184
+        -4192,
+        3152
       ],
-      "id": "837609cc-f13f-4f8d-a98e-858e99249542",
+      "id": "ebf9aca6-88c3-4e39-b52f-4b962c50fdf1",
       "name": "Return OK"
     },
     {
@@ -762,10 +617,10 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        2512,
-        1376
+        -4192,
+        3344
       ],
-      "id": "d5751e41-c45a-439f-b09a-ccaec0354625",
+      "id": "c745d72a-8267-478e-aa7d-b453e1d0f33b",
       "name": "Return ERROR"
     },
     {
@@ -775,12 +630,12 @@
             {
               "id": "10c0668b-1098-479f-806c-dcca01dc9f54",
               "name": "BATCH_SIZE",
-              "value": 100,
+              "value": 150,
               "type": "number"
             },
             {
-              "id": "6b1ce68c-b08d-4e46-97eb-314c2be5ab39",
-              "name": "BATCH_PARALLEL_COUNT",
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "name": "LLM_PARALLEL_COUNT",
               "value": 10,
               "type": "number"
             }
@@ -792,10 +647,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        416,
-        992
+        -6016,
+        2944
       ],
-      "id": "1d2d451a-eb19-4ace-8aed-3c7d416cbf27",
+      "id": "c2c911de-3187-4fb0-8673-be7daa61d335",
       "name": "CONFIG"
     },
     {
@@ -812,10 +667,10 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        640,
-        992
+        -5792,
+        2944
       ],
-      "id": "d1142800-062d-4d3d-a3d7-fba91944a944",
+      "id": "eb29e1f8-2df8-43c1-baf3-ceb418bbaab1",
       "name": "Read file contents",
       "alwaysOutputData": true
     },
@@ -829,10 +684,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        1520,
-        1424
+        -5296,
+        3216
       ],
-      "id": "658ffd02-5a34-42fc-a392-932cb0814341",
+      "id": "6e530003-2fdc-42cc-b75b-1a84f717859b",
       "name": "OpenRouter - GPT 4.1 Nano",
       "credentials": {
         "openRouterApi": {
@@ -851,10 +706,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        1392,
-        1392
+        -5168,
+        3248
       ],
-      "id": "59e0fc9b-ff19-4ef0-88b9-951ee255dcd6",
+      "id": "d8c17d48-ea50-46a4-b215-ec2fc16a699f",
       "name": "OpenRouter - Gemini 2.5 Flash Lite",
       "credentials": {
         "openRouterApi": {
@@ -873,10 +728,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
       "typeVersion": 1,
       "position": [
-        656,
-        1952
+        -5776,
+        3904
       ],
-      "id": "8f0f369e-b74b-4a21-a0e2-1990b91a3e91",
+      "id": "5380a2af-4400-4e29-af68-156cdf484a18",
       "name": "OpenRouter - Gemini 2.5 Flash Lite (target extractor)",
       "credentials": {
         "openRouterApi": {
@@ -950,12 +805,97 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1232,
-        1872
+        -5200,
+        3808
       ],
-      "id": "0d32d752-4b51-4e94-8c74-c8a882e02166",
+      "id": "19ba0f93-c088-435c-b9d9-bfa18832b275",
       "name": "Execute SRT Translate workflow",
+      "alwaysOutputData": true,
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -4640,
+        2944
+      ],
+      "id": "dc167dbf-0ead-40fe-8ef7-60a7823df5b8",
+      "name": "Aggregate SRT lines"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -5424,
+        3824
+      ],
+      "id": "919ffbcf-6640-4ae7-8aca-a092148945f4",
+      "name": "Recover context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=INPUT -> {{ JSON.stringify($json.batch_subtitles.map(sub => ({ index: sub.index, text: sub.text }))) }}\n\n___",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# Professional Subtitle Translation System\n\n## Role\nYou are a professional audiovisual subtitle translator. Your sole task is to translate subtitle entries from '{{ $json.source_lang || 'english' }}' to '{{ $json.target_lang }}' with linguistic precision and narrative consistency.\n\n## Input Format\nA JSON array of subtitle entries, each containing:\n- `index`: sequential identifier (integer)\n- `text`: subtitle text to translate\n\n## Translation Rules\n\n### Rule 1 — Context-First Analysis\nBefore translating any entry, read the entire batch. Identify:\n- Character genders and relationships\n- Speaker identity and emotional tone\n- Technical terms, proper nouns, recurring vocabulary\n- Formality register (tuteo vs. usted, tú vs. vous, etc.)\n\nUse this context to resolve every ambiguity consistently across the batch.\n\n### Rule 2 — Language Handling\n- If a line is already in {{ $json.target_lang }}: return it unchanged\n- If a line is in a language other than {{ $json.source_lang || 'english' }} but identifiable: translate it to {{ $json.target_lang }}\n- If a line is in an unidentifiable language: return it unchanged\n- If a line is empty, whitespace-only, or contains only symbols/numbers: return it unchanged\n\n### Rule 3 — Translation Quality\n- PRESERVE: meaning, tone, style, punctuation, and capitalization patterns\n- PRESERVE: similar text length to respect subtitle timing constraints\n- ENSURE: natural, idiomatic flow in {{ $json.target_lang }}\n- APPLY: cultural adaptation only when literal translation would impede comprehension\n- MAINTAIN: all terminology and character name decisions consistently across the batch\n\n## Output Format\nReturn ONLY a valid JSON object. No explanations, no comments, no markdown, no text outside the JSON.\n```json\n{\n  \"output\": [\n    {\"index\": int, \"text\": \"string\"},\n    ...\n  ]\n}\n```\n\n### Constraints\n- MUST contain exactly the same number of entries as the input\n- MUST NOT add, remove, or reorder entries\n- MUST NOT include any content outside the JSON object\n\n## Example\n\n**Input:**\n```json\n[\n  {\"index\": 47, \"text\": \"Maria walked into the room.\"},\n  {\"index\": 48, \"text\": \"She looked tired.\"},\n  {\"index\": 49, \"text\": \"Good morning, doctor.\"}\n]\n```\n\n**Output (English → Spanish):**\n```json\n{\n  \"output\": [\n    {\"index\": 47, \"text\": \"María entró en la habitación.\"},\n    {\"index\": 48, \"text\": \"Se veía cansada.\"},\n    {\"index\": 49, \"text\": \"Buenos días, doctora.\"}\n  ]\n}\n```\n"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": "={{ $('CONFIG').item.json.LLM_PARALLEL_COUNT }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -5152,
+        2992
+      ],
+      "id": "664ef063-b24f-4b0d-adcd-6cd5011524cf",
+      "name": "Translate lines",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=Hi 👋 Please send me:  \n- Your .SRT file  \n- The target language (e.g. English, French...) in the file description ",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_notification": true,
+          "reply_to_message_id": "={{ $json.message.message_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5712,
+        3536
+      ],
+      "id": "bad9382c-e4fe-4a3e-ae47-c8b31258c77d",
+      "name": "Send instructions",
+      "webhookId": "7f067c04-482d-4d6b-af45-1ca882a24565",
+      "credentials": {
+        "telegramApi": {
+          "id": "fqTSuko8X6YFgAqS",
+          "name": "Telegram - SRT Translator BOT"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -971,40 +911,11 @@
         ]
       ]
     },
-    "Loop Over Items": {
-      "main": [
-        [
-          {
-            "node": "Join batches",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Translate",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Split in batches": {
       "main": [
         [
           {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Translate": {
-      "main": [
-        [
-          {
-            "node": "Translation kept index?",
+            "node": "Translate lines",
             "type": "main",
             "index": 0
           }
@@ -1015,7 +926,7 @@
       "main": [
         [
           {
-            "node": "Loop output",
+            "node": "Aggregate SRT lines",
             "type": "main",
             "index": 1
           }
@@ -1031,7 +942,7 @@
             "index": 0
           },
           {
-            "node": "Loop output",
+            "node": "Aggregate SRT lines",
             "type": "main",
             "index": 0
           }
@@ -1096,16 +1007,6 @@
         ]
       ]
     },
-    "Form OK": {
-      "main": [
-        []
-      ]
-    },
-    "Form ERROR": {
-      "main": [
-        []
-      ]
-    },
     "Translation OK?": {
       "main": [
         [
@@ -1139,21 +1040,21 @@
       "main": [
         [
           {
-            "node": "Reply instructions",
+            "node": "Send instructions",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Reply instructions",
+            "node": "Send instructions",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Reply instructions",
+            "node": "Send instructions",
             "type": "main",
             "index": 0
           }
@@ -1165,7 +1066,7 @@
             "index": 0
           },
           {
-            "node": "Merge",
+            "node": "Recover context",
             "type": "main",
             "index": 1
           }
@@ -1181,46 +1082,7 @@
             "index": 0
           },
           {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Execute SRT Translate workflow",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Send 'In Progress' message": {
-      "main": [
-        []
-      ]
-    },
-    "Reply with error": {
-      "main": [
-        []
-      ]
-    },
-    "Translation kept index?": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Translate",
+            "node": "Recover context",
             "type": "main",
             "index": 0
           }
@@ -1231,19 +1093,8 @@
       "ai_outputParser": [
         [
           {
-            "node": "Translate",
+            "node": "Translate lines",
             "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop output": {
-      "main": [
-        [
-          {
-            "node": "Merge Original and Translated Subtitles",
-            "type": "main",
             "index": 0
           }
         ]
@@ -1275,12 +1126,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Translate",
-            "type": "ai_languageModel",
-            "index": 1
-          },
-          {
-            "node": "SRT indexed array format",
+            "node": "Translate lines",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -1291,9 +1137,9 @@
       "ai_languageModel": [
         [
           {
-            "node": "Translate",
+            "node": "Translate lines",
             "type": "ai_languageModel",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -1326,37 +1172,64 @@
           }
         ]
       ]
+    },
+    "Aggregate SRT lines": {
+      "main": [
+        [
+          {
+            "node": "Merge Original and Translated Subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Translated SRT": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Reply with error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recover context": {
+      "main": [
+        [
+          {
+            "node": "Execute SRT Translate workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate lines": {
+      "main": [
+        [
+          {
+            "node": "Join batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
-  "versionId": "5c708f3e-3b71-4d1f-9600-4f0ae3fa995e",
+  "versionId": "0665c796-7d0d-442e-814c-856acbf20117",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "ad60bc00ef372218dfa03c55129b4359826a8a6d6771e92e9468ffc9009f87f8"
   },
-  "id": "TSC308ZSYRosMX2d",
+  "id": "fdSpvUNx0vyf0kMJ",
   "tags": [
-    {
-      "updatedAt": "2025-09-02T17:12:03.345Z",
-      "createdAt": "2025-09-02T17:12:03.345Z",
-      "id": "9hUMVQ6XaPHnVs48",
-      "name": "GIT"
-    },
-    {
-      "updatedAt": "2025-08-20T20:17:23.374Z",
-      "createdAt": "2025-08-15T08:45:14.160Z",
-      "id": "G0TlfAREHa2NX1Lk",
-      "name": "prod"
-    },
-    {
-      "updatedAt": "2025-08-20T18:31:54.708Z",
-      "createdAt": "2025-08-20T18:31:54.708Z",
-      "id": "JwFFpwYBrrDDkNo0",
-      "name": "form"
-    },
     {
       "updatedAt": "2025-08-20T18:31:53.488Z",
       "createdAt": "2025-08-20T18:31:53.488Z",
@@ -1368,6 +1241,12 @@
       "createdAt": "2025-08-15T08:45:03.140Z",
       "id": "iiq7yealSFabpVUg",
       "name": "ai"
+    },
+    {
+      "updatedAt": "2025-08-20T20:35:44.435Z",
+      "createdAt": "2025-08-20T20:35:44.435Z",
+      "id": "syw5irhKWlVWyLTC",
+      "name": "utils"
     }
   ]
 }
