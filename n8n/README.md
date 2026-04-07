@@ -24,9 +24,9 @@ This n8n workflow provides a web-based interface for translating SRT subtitle fi
 ### Processing Pipeline
 1. **File Decoding**: Converts uploaded binary file to text
 2. **SRT Parsing**: Extracts subtitle entries with timestamps
-3. **Batch Splitting**: Divides subtitles into chunks for efficient processing
-4. **AI Translation**: Uses Google Gemini for contextual translation
-5. **Result Merging**: Combines translated text with original timestamps
+3. **Batch Splitting**: Divides subtitles into chunks; all batches are fed directly into the translation node in a single pass
+4. **AI Translation**: Uses Google Gemini for contextual translation with native parallel processing
+5. **Result Merging**: Collects all translated batches, deduplicates by subtitle index, and sorts before passing downstream
 6. **SRT Generation**: Creates properly formatted SRT file
 
 ### Output Stage
@@ -47,6 +47,7 @@ The workflow uses **Google Gemini 2.5 Flash Lite** for translation with:
 - **Contextual Translation**: Considers previous subtitles for consistency
 - **Gender/Formality Resolution**: Uses context to resolve ambiguities
 - **Batch Processing**: 50 subtitles per API call
+- **Native Parallel Processing**: Parallel LLM calls handled by the `Translate` node via `LLM_PARALLEL_COUNT`
 - **Structured Output**: JSON format validation
 
 ## Installation
@@ -109,7 +110,7 @@ The workflow will process the file, translate the subtitles, and return the tran
 - **Batch Size**: 50 subtitles per API request
 - **File Size**: Recommended maximum 10MB
 - **Processing Time**: ~30-60 seconds for 1-hour subtitle file
-- **Concurrent Requests**: 5 parallel translation calls
+- **Concurrent Requests**: 5 parallel translation calls (configured via `LLM_PARALLEL_COUNT` in the `CONFIG` node)
 
 ## Error Handling
 
@@ -172,10 +173,10 @@ Replace the "Google Gemini" node with other LLM providers:
 - Local models
 
 ### Modify Batch Size
-Adjust the `BATCH_SIZE` variable in the "Split in batches" node (defaults to 50).
+Adjust the `BATCH_SIZE` variable in the `CONFIG` node (defaults to 50).
 
 ### Modify Concurrency
-Adjust the `Batch Processing` size in the "Translate" node (defaults to 5 parallel calls).
+Adjust `LLM_PARALLEL_COUNT` in the `CONFIG` node to control how many batches the `Translate` node processes in parallel (defaults to 5).
 
 ## Requirements
 
